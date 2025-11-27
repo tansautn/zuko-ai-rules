@@ -1,0 +1,144 @@
+---
+description: Rules for C# WinForms (.NET 6/8+) Projects
+globs: **/*.cs
+alwaysApply: true
+---
+# C# WinForms Project Rules
+
+# FIRST-BLOOD: Project Standards & Build (Priority)
+- **Framework**: Target `.NET 8.0` (LTS).
+- **Architecture**: WinForms MVP or Controller-based (View is dumb).
+- **Release Strategy** (Production):
+    - **Self-Contained**: Must include runtime. No client installation required.
+    - **Single File**: Combine assemblies into one `.exe`.
+    - **Trimming**: Enable `PublishTrimmed` to minimize size.
+    - **Obfuscation**: Apply `RegexObfuscate` or equivalent logic in Post-Build/Publish pipeline for Enterprise protection.
+- **Project File (.csproj) Template**:
+  ```xml
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier> <!-- WinForms is Windows specific -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  ```
+
+## 1) UI-First Workflow (Designer-Centric)
+- **Source of Truth**: Visual Studio Designer is the primary UI editor.
+- **File Integrity**:
+    - `Form.Designer.cs` / `UserControl.Designer.cs`: **AUTO-GENERATED**. Never hand-edit.
+    - `Form.cs` / `UserControl.cs`: Logic placement (Partial classes).
+- **Updates**: Changes in Designer automatically reflect in code. No manual compile step needed.
+
+## 2) Architecture & Responsibilities (MVP/Service-Oriented)
+- **Views (Forms/Controls)**:
+    - "Dumb" UI layer. Only forward events to Presenters/Controllers.
+    - Use `partial` classes to separate UI logic from business logic.
+    - UI Non-freezes/Thread Safety:
+        - Never access UI controls from background threads.
+        - Use `this.Invoke(() => label.Text = "Done");` if logic runs in `Task.Run`.
+- **Controllers/Presenters**:
+    - Orchestrate logic. No direct UI manipulation code (use Interfaces/Events).
+    - Subscribe to View events.
+- **Services**:
+    - Pure C# business logic (UI-agnostic).
+    - Manage Dependencies via DI (Microsoft.Extensions.DependencyInjection).
+- **Communication**:
+    - Use standard C# `Events` (`EventHandler<T>`) or `MediatR` for decoupled messaging.
+    - Avoid tight coupling between parent/child forms.
+
+## 3) Coding Style (Microsoft Conventions)
+- **Naming**:
+    - `PascalCase`: Classes, Methods, Properties, Structs, Enums.
+    - `camelCase`: Local variables, parameters.
+    - `_camelCase`: Private fields (underscore prefix is standard for backing fields).
+- **Formatting**: K&R style braces or Allman style (consistent per project).
+- **Safety**:
+    - Explicit access modifiers (`public`, `private`, `protected`).
+    - No "Magic Strings/Numbers" -> Use `const` or `enums`.
+
+## 4) Async & Threading (Crucial for WinForms)
+- **No Blocking UI**: Never run long ops on the UI Thread.
+- **Pattern**: Use `async`/`await` for I/O bound tasks.
+- **UI Updates**:
+    - Must occur on Main Thread.
+    - Use `Control.Invoke` or `Control.BeginInvoke` if marshaling back from a background thread.
+    - Prefer `IProgress<T>` for progress reporting.
+
+## 5) Logging & Diagnostics
+
+**Mandatory**:  Use the shared `Zuko.Commons.Logger.cs` file. Do NOT use `Console.WriteLine` or `Debug.WriteLine`.
+
+### Initialization
+- Copy `Logger.cs` to project (e.g., `Commons/Logger.cs`).
+- Ensure `Newtonsoft.Json` is installed (`dotnet add package Newtonsoft.Json`).
+- Declare strict `private static readonly` logger in every class.
+- **Module Name**: Use `nameof(ClassName)` for consistency.
+
+```csharp
+using Zuko.Commons;
+
+public class PaymentService
+{
+    // ✅ CORRECT INIT
+    private static readonly Logger _logger = LoggerFactory.CreateLogger(nameof(PaymentService));
+    
+    // ❌ DO NOT use generic names like "Log" or "Service"
+}
+```
+
+### Usage Patterns
+- **Debug**: Dev data. `_logger.Debug("Raw hex", hexData);`
+- **Info**: Key flows. `_logger.Info("Payment processed", new { Id = 123, Amount = 99 });`
+- **Warn**: Recoverable issues. `_logger.Warn("Retrying connection...", retryCount);`
+- **Error**: Exceptions. Pass the Exception object as the second argument for stack traces.
+  ```csharp
+  catch (Exception ex)
+  {
+      // ✅ Pass generic object or Exception explicitly
+      _logger.Error("Database connection failed", ex); 
+  }
+  ```
+- **Async/Threading**: Since `Logger.cs` handles file I/O, rely on its internal locking/stream logic.
+
+## 6) ACK Mechanism & Coordination
+- **Coordination**: Use `TaskCompletionSource<T>` or `SemaphoreSlim` for signaling.
+- **Resource Management**: Implement `IDisposable` pattern for classes holding unmanaged resources (streams, handles).
+- **Using Statement**: Prefer `using` declaration (`using var x = ...`) for auto-cleanup.
+
+## 7) Testing
+- **Framework**: xUnit or NUnit.
+- **Scope**:
+    - Unit Test: Services, Logic, Presenters (Mock Views).
+    - Do not Unit Test generated Designer code or simple UI bindings.
+- **Mocking**: Use `Moq` or `NSubstitute`.
+
+## 8) File/Module Conventions
+- **Structure**: One class per file. File name matches Class name.
+- **Namespaces**: Match folder structure (e.g., `Project.Windows.Components`).
+- **Organization**: Group by functionality (`Features/Login`), not just type (`/Forms`, `/Controllers`).
+
+## 9) External Libraries (NuGet)
+- **Management**: Use NuGet Packet Manager / `.csproj`.
+- **Validation**: Check compatibility with target .NET framework/version.
+- **Docs**: Reference official MS Docs or Library Wiki before implementation.
+
+## 10) Security & Config
+- **Configuration**: Use `appsettings.json` + `IOptions<T>`. Never hardcode.
+- **Secrets**: Use "User Secrets" tool for local dev; Key Vault/Environment Variables for prod.
+- **Data**: Protect PII. Sanitize inputs.
+
+## 11) Definition of Done
+- Solution builds with **0 Warnings**. Recomended build cmd: `dotnet publish -c Release -r win-x64`
+    - Logs appear in `app.log` (bin folder).
+    - No sensitive data (passwords) in logs.
+    - Exceptions are caught and logged, not swallowed.
+- UI responsive (no freezes during processing).
+- Async/Await correctly implemented (no `.Result` or `.Wait()`).
+- Unit tests green.
+- Code cleaned via Roslyn Analyzer / `dotnet format`.
