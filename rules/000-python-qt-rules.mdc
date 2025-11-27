@@ -1,0 +1,84 @@
+---
+description: Rule for Python, PySide6 project
+globs: **/*.py
+alwaysApply: true
+---
+# PySide6 Project Rules
+
+## 1) UI-First Workflow (Mandatory)
+- All user-facing UI must be designed in Qt Designer first and saved as raw `.ui` files (no Python slots in `.ui`).
+- Keep `.ui` files as the single source of truth for layout and widget tree.
+- After any `.ui` change, compile UI to Python with:
+  ```bash
+  python scripts/compile_ui.py
+  ```
+- Never hand-edit generated UI Python files; edit only the corresponding controller/component files.
+
+## 2) Architecture & Responsibilities
+- Controllers extend `core.BaseController` and only wire UI to events via `slot_map`.
+    + Inherits orders: 1st: UI class, 2nd: BaseController
+    + Never call `setupUi` in `__init__`, cause `BaseController` was called in super().__init__()
+- Handlers extend `core.Observer.Subscriber` and implement event logic (`on_<event>` methods). Keep business logic out of controllers.
+- Services contain pure, UI-agnostic business logic. Prefer dependency injection and testability.
+- Components live under `windows/components/<ComponentName>/` with this structure:
+  - `ComponentName.ui` (designer)
+  - `ComponentName.py` (generated; do not edit)
+  - `ComponentNameWidget.py` (Controller/Widget)
+  - `ComponentNameHandler.py` (Handler)
+  - `__init__.py`
+- Use `WidgetManager` for widget access and signal-suppressed updates.
+- Use the Observer (Publisher/Subscriber) for decoupled communication. Do not directly call other controllers.
+
+## 3) Coding Style
+- Follow PEP 8/PEP 257 except naming to align with Qt conventions:
+  - Classes/Files: PascalCase (e.g., `MainController.py`)
+  - Methods/variables: camelCase
+  - Directories: lowercase with underscores (e.g., `windows/main`)
+- Maximize readability: small methods, clear names, early returns, no deep nesting.
+- Type hints required for public functions/methods.
+- Errors must use `core.Exceptions` types; do not catch silently.
+
+## 4) Logging & Diagnostics
+- Use `core.Logging.logger` everywhere (no `print`).
+- Log key start/end points of important flows, include contextual data (avoid secrets).
+- In async/multithreaded contexts, include identifiers (task id, thread info) in logs when available.
+
+## 5) ACK Mechanism (If coordination is needed)
+- When a task emits events that require downstream processing before cleanup, use the ACK mechanism per `docs/provided-by-base/ACKNOWLEDGMENT_MECHANISM.md`:
+  - Emit events via `TaskServiceWithAck.emit_event_with_ack(...)`.
+  - Handlers process with `HandlerServiceWithAck.handle_with_ack(...)`.
+  - Task services must `wait_for_acknowledgments(...)` before resource cleanup (e.g., closing browser).
+- Share a single `AcknowledgmentTracker` between sender/receiver in the same workflow.
+
+## 6) Testing
+- Use the provided pytest setup in `tests_auto/` (see `TESTING_SETUP.md`).
+- Write unit tests for core logic (services, ack layer) and integration tests for critical flows.
+- Commands:
+  ```bash
+  pytest
+  pytest --cov=core --cov=services --cov-report=html
+  ```
+
+## 7) Scripts & Scaffolding
+- Generate controllers/services/components via `scripts/generate.py` when possible to ensure consistency.
+- Re-run `scripts/compile_ui.py` after adding/editing `.ui` files.
+
+## 8) File/Module Conventions
+- Keep controller/handler pairs per window/component; do not mix service logic into controllers.
+- Ensure each module/package has `__init__.py` as needed and exports intended classes.
+- Keep generated files out of VCS if configured; never hand-edit generated code.
+
+## 9) External Libraries & Docs
+- Before integrating a new library/feature, review its official docs (Context7/web) and add brief notes to `docs/` if behavior affects architecture.
+- Prefer existing helpers/services documented under `docs/provided-by-base/` before introducing new dependencies.
+
+## 10) Security & Secrets
+- Do not log credentials, tokens, or PII.
+- Centralize configuration via `core.Config`; never hardcode secrets.
+
+## 11) Definition of Done (UI/Feature)
+- `.ui` exists and compiles cleanly.
+- Controller/Handler implemented with `slot_map` and Observer wiring.
+- Service code covered by tests; critical flows have integration tests.
+- No direct edits to generated UI code; logging in place; exceptions typed.
+- Documentation snippet added/updated in `docs/` if behavior is non-trivial.
