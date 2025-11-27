@@ -1,0 +1,44 @@
+---
+alwaysApply: true
+---
+## 🧠 Agent LLM Rules for Laravel + Filament Modular Project
+
+### 1. General Rules
+
+* ĐỌC : [General rules for all project](mdc:./000-general-rules.mdc)
+* Áp dụng cho tất cả project của tôi. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP
+
+### 3. Architecture & Structure
+
+* 🧱 Dự án Laravel 12, **modular structure** với:
+
+  * `nwidart/laravel-modules` – tách biệt domain logic.
+  * `filament/filament` – Admin CP
+  * `bezhansalleh/filament-shield` – Role/Permission
+* 👇 **Mỗi module** phải:
+
+  * Có file `composer.json`
+  * Có `Providers`, `Routes`, `Events`, `Models`, `Policies`, `Docs`, `Tests`, v.v...
+  * **Không dùng Facade ngoài `AppServiceProvider` nếu không cần thiết**
+* 📁 Tên thư mục lowercase\_snake\_case, class PascalCase, function camelCase
+
+---
+
+### 4. Code Style Guidelines
+
+* 🧪 **Testing-first** nếu logic >= 3 bước xử lý
+* 🛠️ Tuân theo PSR:
+
+  * PSR-4: autoloading
+  * PSR-12: code style
+* 🧠 Mỗi method không vượt quá **15 dòng**
+* 🔍 Sử dụng **type hint**, **dependency injection**, không viết code hard-coupled
+* 🚫 Không log thông tin nhạy cảm. Không commit credentials.
+
+---
+
+### 5. Filament Admin Rules
+
+* Tạo Resource thông qua command hoặc `miguilim/filament-auto-panel`
+* Field validation, authorization policy tách riêng – không nhét trong Resource class
+* Không override default view trừ khi thực sự cần thiết

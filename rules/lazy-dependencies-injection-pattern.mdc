@@ -1,0 +1,218 @@
+# Lazy Dependencies Injection Pattern
+
+Trong các dự án Laravel + Filament Modular Project.
+- Tôi ưu tiên sử dụng **Lazy Loading** cho dependencies injection.
+    + Giảm memory usage khi chưa cần tới
+    + Tăng performance cho các services không được sử dụng ngay lập tức
+- Tránh việc yêu cầu dependencies ở constructor
+    + Điều này làm cho Factory khó viết hơn, và hơn nữa Laravel CI không thể tự động make() một cách bình thường được
+    + Khó khăn trong việc testing và mocking
+- Khi gọi các phương thức hoặc truy xuất thuộc tính từ phụ thuộc.
+    + Sử dụng method `get` để lấy ra instance của deps
+    + Implement singleton pattern để tránh tạo nhiều instances
+
+---
+
+## ❌ Anti-Pattern: Constructor Injection
+
+```php
+// Tất cả các class được đưa vào làm deps của thực thể này 
+// đều là có thể khởi tạo độc lập mà không cần bất cứ phụ thuộc nào
+// vì vậy thực thể hiện tại cũng nên như vậy
+public function __construct(
+    DataAggregationService $dataAggregationService,
+    MemberHistoryRepository $memberHistoryRepository,
+    WalletHistoryRepository $walletHistoryRepository,
+    PackageGrowthRepository $packageGrowthRepository
+) {
+    $this->dataAggregationService = $dataAggregationService;
+    $this->memberHistoryRepository = $memberHistoryRepository;
+    $this->walletHistoryRepository = $walletHistoryRepository;
+    $this->packageGrowthRepository = $packageGrowthRepository;
+}
+```
+
+## ✅ Pattern: Lazy Dependencies Injection
+
+### Cách 1: Sử dụng app()->make() trong constructor
+
+```php
+public function __construct(){
+    $this->dataAggregationService = app()->make(DataAggregationService::class);
+    $this->memberHistoryRepository = app()->make(MemberHistoryRepository::class);
+    $this->walletHistoryRepository = app()->make(WalletHistoryRepository::class);
+    $this->packageGrowthRepository = app()->make(PackageGrowthRepository::class);
+}
+```
+
+### Cách 2: Sử dụng method get mỗi khi cần instance của deps (Recommended)
+
+```php
+class HistoryTrackingService
+{
+    protected ?DataAggregationService $dataAggregationService = null;
+    protected ?MemberHistoryRepository $memberHistoryRepository = null;
+    protected ?WalletHistoryRepository $walletHistoryRepository = null;
+    protected ?PackageGrowthRepository $packageGrowthRepository = null;
+
+    public function __construct()
+    {
+        // Lazy loading - không inject dependencies ở constructor
+    }
+
+    /**
+     * Get DataAggregationService instance (lazy loading)
+     */
+    protected function getDataAggregationService(): DataAggregationService
+    {
+        if (!$this->dataAggregationService instanceof DataAggregationService) {
+            $this->dataAggregationService = app()->make(DataAggregationService::class);
+        }
+
+        return $this->dataAggregationService;
+    }
+
+    /**
+     * Get MemberHistoryRepository instance (lazy loading)
+     */
+    protected function getMemberHistoryRepository(): MemberHistoryRepository
+    {
+        if (!$this->memberHistoryRepository instanceof MemberHistoryRepository) {
+            $this->memberHistoryRepository = app()->make(MemberHistoryRepository::class);
+        }
+
+        return $this->memberHistoryRepository;
+    }
+
+    // Same for other dependencies...
+}
+```
+
+### Cách 3: Sử dụng trait SingletonMakeable cho trường hợp đơn giản
+
+Khi chỉ cần **1 line code duy nhất** để truy cập dependency, có thể sử dụng trait `SingletonMakeable` có sẵn trong module Core:
+
+```php
+// DataAggregationService phải sử dụng trait SingletonMakeable
+use MyLink\Cerm\Core\Traits\SingletonMakeable;
+
+class DataAggregationService
+{
+    use SingletonMakeable;
+    
+    // ... các method khác
+}
+
+// Service gọi dependency chỉ cần 1 line
+class SimpleService
+{
+    public function processData(): array
+    {
+        // Chỉ cần 1 line để lấy dependency
+        return DataAggregationService::make()->aggregateMemberData();
+    }
+}
+```
+
+**Ưu điểm:**
+- Code ngắn gọn, chỉ 1 line: `ServiceClass::make()`
+- Tự động implement singleton pattern
+- Phù hợp khi dependency chỉ được sử dụng 1-2 lần trong service
+
+**Nhược điểm:**
+- Không phù hợp khi dependency được sử dụng nhiều lần
+- Khó kiểm soát lifecycle của dependency
+- Khó test và mock
+
+## 🔑 Key Benefits
+
+1. **Memory Efficiency**: Dependencies chỉ được tạo khi cần thiết
+2. **Testing Friendly**: Dễ dàng mock và test từng method riêng biệt
+3. **Factory Support**: Laravel có thể tự động tạo instance mà không cần resolve dependencies
+4. **Performance**: Giảm thời gian khởi tạo service
+5. **Flexibility**: Có thể thay đổi dependencies runtime nếu cần
+
+## 📋 Implementation Guidelines
+
+### 1. Property Declaration
+```php
+protected ?ServiceClass $serviceName = null;
+```
+
+### 2. Getter Method Pattern
+```php
+protected function getServiceName(): ServiceClass
+{
+    if (!$this->serviceName instanceof ServiceClass) {
+        $this->serviceName = app()->make(ServiceClass::class);
+    }
+
+    return $this->serviceName;
+}
+```
+
+### 3. Usage in Methods
+```php
+public function someMethod(): array
+{
+    // Lazy loading - chỉ tạo khi cần
+    $data = $this->getDataAggregationService()->aggregateMemberData();
+    
+    return $data;
+}
+```
+
+## 🚫 When NOT to Use
+
+- **Simple Services**: Nếu service chỉ có 1-2 dependencies đơn giản
+- **Always-Used Dependencies**: Nếu dependency được sử dụng trong mọi method
+- **Performance Critical**: Nếu cần tối ưu performance tối đa (constructor injection nhanh hơn)
+
+## 🔄 Migration from Constructor Injection
+
+1. Thay đổi property từ `protected ServiceClass $service` thành `protected ?ServiceClass $service = null`
+2. Xóa dependencies khỏi constructor
+3. Tạo getter method cho mỗi dependency
+4. Thay thế `$this->service` bằng `$this->getService()`
+
+---
+
+## 📚 Examples from Codebase
+
+### DataAggregationService
+```php
+class DataAggregationService
+{
+    protected ?TransactionItemRepository $transactionRepository = null;
+    protected ?WalletRepository $walletRepository = null;
+
+    public function __construct()
+    {
+        // Lazy loading - không inject dependencies ở constructor
+    }
+
+    protected function getTransactionRepository(): TransactionItemRepository
+    {
+        if (!$this->transactionRepository instanceof TransactionItemRepository) {
+            $this->transactionRepository = app()->make(TransactionItemRepository::class);
+        }
+        return $this->transactionRepository;
+    }
+}
+```
+
+### TelegramReportService
+```php
+class TelegramReportService
+{
+    protected ?DataAggregationService $dataAggregationService = null;
+
+    protected function getDataAggregationService(): DataAggregationService
+    {
+        if (!$this->dataAggregationService instanceof DataAggregationService) {
+            $this->dataAggregationService = app()->make(DataAggregationService::class);
+        }
+        return $this->dataAggregationService;
+    }
+}
+```
