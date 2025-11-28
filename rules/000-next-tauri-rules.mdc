@@ -1,0 +1,57 @@
+---
+description: Rules for Next.js (TypeScript) + Tauri v2 Projects
+globs: **/*.ts, **/*.tsx, **/*.rs, **/*.json
+alwaysApply: true
+---
+# Next.js + Tauri Project Rules
+
+# FIRST-BLOOD: Architecture & Directory Standards
+- **Framework**: Next.js (App Router), React, TypeScript.
+- **Desktop Engine**: Tauri v2 (Rust).
+- **Directory Structure (Strict)**:
+    - `root/`: ONLY configs (`package.json`, `tauri.conf.json`, `tsconfig.json`, `.gitignore`).
+    - `src-ts/`: All Frontend logic (Next.js App Router, Components, Hooks). **Configure `next.config.js` to define this as baseDir if needed**.
+    - `src-tauri/`: Rust backend and Tauri configuration.
+- **Release Strategy**:
+    - **Single Binary**: Enable bundle splitting minimization.
+    - **Resource Logic**: Use `src-tauri/capabilities` for permission handling.
+- **UI Components**:
+    - Preferred: `21st.dev` components or `shadcn/ui`.
+    - Style: Tailwind CSS.
+
+## 1) Google AI Studio Compatibility & Workflow
+- **Phase 1 (Web)**: Develop UI/Logic completely in `src-ts`. Treat it as a standard Web App initially.
+- **Phase 2 (Desktop)**: Integrate Tauri via `src-tauri`.
+- **Constraint**: React logic must be compatible with SSG (Static Site Generation) where possible (`output: 'export'` in next.config is usually required for Tauri).
+
+## 2) Architecture: The "Split-Brain" Model
+- **Frontend (`src-ts`) - " The Viewer"**:
+    - **Role**: Presentation, State Management (Zustand/Context), User Input.
+    - **Forbidden**: Direct OS file access (Node.js APIs) in Component code.
+    - **Pattern**: `Feature-First` folder structure (e.g., `src-ts/features/auth`).
+- **Backend (`src-tauri`) - "The Worker"**:
+    - **Role**: Heavy computation, System I/O, Database SQLite, Native API.
+    - **Commands**: Expose Rust functions via `#[tauri::command]`.
+- **Bridge**:
+    - Use `@tauri-apps/api` strictly for IPC.
+    - Always define **TypeScript Interfaces** matching Rust Structs for payloads.
+
+## 3) Coding Style (Typescript/React)
+- **Naming**:
+    - Components: `PascalCase.tsx`.
+    - Hooks: `useCamelCase.ts`.
+    - Utilities: `camelCase.ts`.
+- **Props**: Use `interface Props` over `type`.
+- **Functions**: Prefer Arrow Functions for components. `const Component = () => {}`.
+- **Imports**: Use Absolute Imports (adjust `tsconfig` paths `@/*` -> `src-ts/*`).
+
+## 4) Rust/Tauri Style
+- **Clippy**: Code must pass `cargo clippy`.
+- **Async**: Heavy commands must be `async`.
+- **Error Handling**: Use `Result<T, String>` (or custom Error enum) serialized to Frontend. **Never panic**.
+
+## 5) Definition of Done
+- **Build**: `npm run tauri build` succeeds.
+- **Lint**: No ESLint warnings.
+- **Type Safety**: No `any`. Strict Mode enabled.
+- **Components**: Sourced from `21st.dev` (clean code, no spaghetti logic).

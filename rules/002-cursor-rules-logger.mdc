@@ -1,252 +1,72 @@
 ---
-alwaysApply: false
+description: Rules for Unified Logging (React -> Rust Bridge)
+globs: **/*.ts, **/*.rs
+alwaysApply: true
 ---
-# Cursor Rules: Logger Usage Guidelines
+# Unified Logging Standards
 
-## General Rules for Using Logger in Projects
+## 1. The Single Source of Truth
+- **Philosophy**: All application logs (Frontend & Backend) must be aggregated by the Rust layer.
+- **Library**:
+   - Rust: `tauri-plugin-log`.
+   - TS: Custom wrapper invoking Tauri log commands.
+- **Output**: Logs must be printable to Console (Dev) and File (Prod).
 
-1. **Always use the Logger utility instead of built-in console methods**
-   - Depending various langagues. It's could be `print` on `python`; `Debug.WriteLine` on `C#` or `console` in `TypeScripts`, `Javascripts`. But i'm taking about the built-in console printer
-   - With Laravel/Symfony related system. We'll use Log::channel() method for doing "module specific logging". You need to check `configs/logging.php` to make sure channel define exist.
-   - Replace all instances of `console.log()`, `console.error()`, etc. with the equivalent Logger methods
-   - Never use the native `console` object directly in application code
+## 2. Frontend Implementation (`src-ts/lib/logger.ts`)
+**Mandatory**: Create a bridge utility. Do NOT use `console.log` directly in production logic.
 
-2. **Initialize Logger at the top of each module**
-   - Import and initialize the Logger at the beginning of each file
-   - Use a module name that matches the file or component name
+### Pattern:
+```typescript
+// src-ts/lib/logger.ts
+import { info, warn, error, debug } from '@tauri-apps/plugin-log';
 
-3. **Scoped logging in multithreaded or async systems**
-Logging in concurrent or asynchronous environments must include contextual identifiers to allow for tracing across threads or async calls.
-
-- For multithreaded systems: logger context must include `thread_id` or equivalent thread-local identifier.
-- For async/event systems: logger context must include `invoker_id`, `request_id`, or equivalent trace context.
-- Scoped loggers should be initialized within the thread or async function scope to prevent shared context pollution.
-- Failure to do so can result in untraceable or mixed logs in high-concurrency environments.
-
-4. **Choose appropriate log levels**
-   - Use log levels consistently according to their intended purpose
-   - Follow the severity hierarchy: debug < log < info < warn < error
-
-## Logger Initialization
-
-### ✅ DO:
-
-```javascript
-import createLogger from './utils/logger';
-
-// Initialize at the top of the file with the module name
-const logger = createLogger('moduleName', {
-  level: 'info',
-  enabled: true
+// Scope for differentiation
+const createLogger = (scope: string) => ({
+    info: (msg: string, data?: unknown) => info(`[${scope}] ${msg}`, data ? { data } : undefined),
+    warn: (msg: string, data?: unknown) => warn(`[${scope}] ${msg}`, data ? { data } : undefined),
+    error: (msg: string, err?: unknown) => error(`[${scope}] ${msg}`, err instanceof Error ? { stack: err.stack, msg: err.message } : { err }),
+    debug: (msg: string, data?: unknown) => debug(`[${scope}] ${msg}`, data ? { data } : undefined),
 });
+
+export default createLogger;
 ```
 
-### ❌ DON'T:
+### Usage in Components/Hooks:
+```typescript
+import createLogger from '@/lib/logger';
+const logger = createLogger('AuthService');
 
-```javascript
-// Don't initialize multiple loggers in the same file
-const logger1 = createLogger('module1');
-const logger2 = createLogger('module2');
+// ✅ CORRECT
+logger.info('Login attempted', { email: 'user@example.com' });
 
-// Don't use generic module names
-const logger = createLogger('log');
-
-// Don't initialize logger inside functions unless absolutely necessary
-function someFunction() {
-  const logger = createLogger('dynamic'); // Avoid this
-}
+// ❌ INCORRECT
+console.log('Login attempted'); 
 ```
 
-## Log Level Usage
+## 3. Rust Implementation (`src-tauri/src/lib.rs`)
+- Initialize `tauri-plugin-log`.
+- Configure Log Rotation and formatting.
 
-### When to use each log level:
+```rust
+// In builder logic
+.plugin(
+    tauri_plugin_log::Builder::default()
+        .targets([
+            LogTarget::LogDir,
+            LogTarget::Stdout,
+            LogTarget::Webview, // Ensures console.log from WebView also captured if needed
+        ])
+        .build()
+)
+```
 
-1. **debug**: Detailed information useful during development and debugging
-   ```javascript
-   logger.debug('Processing item', item);
-   logger.debug('Variable state:', { count, items, status });
-   ```
+## 4. Log Levels Strategy
+| Level | Use Case |
+| :--- | :--- |
+| **DEBUG** | Hex dumps, State changes, Raw API response. |
+| **INFO** | User navigation, Successful transactions, App Life-cycle (Init/Exit). |
+| **WARN** | API Retries, Validation errors, Non-fatal UI glitches. |
+| **ERROR** | Exceptions, Crashes, Failed IPC calls. Pass the full `Error` object. |
 
-2. **log**: General information about application flow
-   ```javascript
-   logger.log('Function called with parameters', params);
-   logger.log('Processing completed');
-   ```
-
-3. **info**: Important events in the application
-   ```javascript
-   logger.info('User authenticated successfully');
-   logger.info('API request successful', response.status);
-   ```
-
-4. **warn**: Potential issues that don't prevent the application from working
-   ```javascript
-   logger.warn('API rate limit approaching', remainingRequests);
-   logger.warn('Deprecated feature used', featureName);
-   ```
-
-5. **error**: Errors that may prevent proper operation
-   ```javascript
-   logger.error('API request failed', error);
-   logger.error('Failed to process data', { data, error });
-   ```
-
-## Formatting Guidelines
-
-1. **Include contextual information**
-   ```javascript
-   // Good
-   logger.error('Failed to fetch user data', { userId, error });
-   
-   // Avoid
-   logger.error('Failed');
-   ```
-
-2. **Use string templates for complex messages**
-   ```javascript
-   // Good
-   logger.info(`User ${userId} performed ${action} on resource ${resourceId}`);
-   
-   // Avoid concatenation
-   logger.info('User ' + userId + ' performed ' + action);
-   ```
-
-3. **Log objects for structured data**
-   ```javascript
-   // Good
-   logger.debug('Request parameters', { method, url, headers, body });
-   
-   // Avoid
-   logger.debug('Request method: ' + method + ', url: ' + url);
-   ```
-
-## Configuration Best Practices
-
-1. **Set appropriate default levels based on environment**
-   ```javascript
-   const isDevelopment = process.env.NODE_ENV === 'development';
-   const logger = createLogger('myModule', {
-     level: isDevelopment ? 'debug' : 'info'
-   });
-   ```
-
-2. **Disable verbose logging in production**
-   ```javascript
-   // In a configuration file
-   import { Logger } from './utils/logger';
-   
-   if (process.env.NODE_ENV === 'production') {
-     Logger.config.setDefaultLevel('warn');
-   }
-   ```
-
-## Common Patterns
-
-1. **Log at the beginning and end of important functions**
-   ```javascript
-   async function processData(data) {
-     logger.debug('Processing data started', { size: data.length });
-     
-     try {
-       // Process data
-       logger.info('Data processed successfully');
-       return result;
-     } catch (error) {
-       logger.error('Error processing data', error);
-       throw error;
-     }
-   }
-   ```
-
-2. **Log API requests and responses**
-   ```javascript
-   async function apiRequest(endpoint, options) {
-     logger.debug('API request', { endpoint, options });
-     
-     try {
-       const response = await fetch(endpoint, options);
-       logger.debug('API response', { 
-         status: response.status,
-         statusText: response.statusText
-       });
-       return response;
-     } catch (error) {
-       logger.error('API request failed', { endpoint, error });
-       throw error;
-     }
-   }
-   ```
-
-3. **Group related logs**
-   ```javascript
-   function complexOperation() {
-     logger.group('Complex operation');
-     
-     logger.debug('Step 1');
-     // Do step 1
-     
-     logger.debug('Step 2');
-     // Do step 2
-     
-     logger.groupEnd();
-   }
-   ```
-
-## Migration from Console to Logger
-
-When updating existing code:
-
-1. Replace direct console calls with logger:
-   ```javascript
-   // Before
-   console.log('Message');
-   console.error('Error occurred', error);
-   
-   // After
-   logger.log('Message');
-   logger.error('Error occurred', error);
-   ```
-
-2. Add appropriate context to existing logs:
-   ```javascript
-   // Before
-   console.log('User logged in');
-   
-   // After
-   logger.info('User authenticated successfully', { userId, timestamp });
-   ```
-
-3. Review and adjust log levels:
-   ```javascript
-   // Before
-   console.log('Debug information');
-   
-   // After
-   logger.debug('Debug information');
-   ```
-
-## Troubleshooting
-
-If logs are not appearing:
-
-1. Check if the logger is enabled:
-   ```javascript
-   if (!logger.isEnabled()) {
-     // Logger is disabled
-   }
-   ```
-
-2. Check if the log level is appropriate:
-   ```javascript
-   if (!logger.isLevelEnabled('debug')) {
-     // Debug logs won't appear
-   }
-   ```
-
-3. Inspect the global configuration:
-   ```javascript
-   import { Logger } from './utils/logger';
-   
-   const config = Logger.config.getConfig();
-   console.log('Logger configuration:', config);
-   ``` 
+## 5. Security
+- **Sanitization**: Never log Passwords, Tokens, or PII (Personally Identifiable Information) in `INFO/DEBUG`.
