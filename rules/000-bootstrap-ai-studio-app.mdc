@@ -1,4 +1,7 @@
 Initialize a new Next.js + Tauri project following the attached "000-next-tauri-rules" and "002-cursor-rules-logger".
+All other rules also is MUST READ, FOLLOW.
+
+`000-general-rules`, `001-tasks-workflow`, `003-documentation-context`, `005-build-automation`
 
 Steps to execute:
 1.  **Scaffold**: Create root config files. Setup `src-ts` for Next.js (clean generated boilerplate) and `src-tauri` for Rust.
