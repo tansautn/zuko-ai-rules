@@ -1,8 +1,7 @@
 ---
-description: Rules for using Zuko.Commons.Logger in C# projects
-globs: **/*.cs
-alwaysApply: true
+apply: manually
 ---
+
 # Zuko.Commons.Logger Rules
 
 ## 1. Mandatory Usage

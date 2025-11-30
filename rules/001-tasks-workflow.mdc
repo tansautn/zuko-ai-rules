@@ -1,7 +1,6 @@
 ---
-description: Task Workflow System for project implementation across multiple task files within the docs/tasks/ directory.
-globs: **/*
-alwaysApply: true
+apply: by model decision
+instructions: claude
 ---
 
 # Task Workflow System (Multi-File in `docs/tasks/` Directory)

@@ -1,8 +1,7 @@
 ---
-description: Rules for C# WinForms (.NET 6/8+) Projects
-globs: **/*.cs
-alwaysApply: true
+apply: always
 ---
+
 # C# WinForms Project Rules
 
 # FIRST-BLOOD: Project Standards & Build (Priority)
