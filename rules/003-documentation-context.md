@@ -1,0 +1,1 @@
+D:/MyLink/git_repositories/mylink_paste-helper/.aiassistant/rules/003-documentation-context.mdc

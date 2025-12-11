@@ -1,0 +1,1 @@
+D:/MyLink/git_repositories/mylink_paste-helper/.aiassistant/rules/200-cursor-rules.mdc
