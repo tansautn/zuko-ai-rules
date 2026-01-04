@@ -3,297 +3,107 @@ description:
 globs: *.php *.py
 alwaysApply: false
 ---
-# Repository Pattern Enforcement
+# RULE: REPO & LAZY DI IN LARAVEL/PHP App
 
-## **Core Principle: Models are Data Holders, Not Data Access Layer**
+## 1. CORE ARCHITECTURE PRINCIPLES
+*   **Models:** Only for data holding & relationship definitions.
+*   **Repositories:** The **ONLY** layer for database interaction.
+*   **Services/Jobs/Widgets:** Must use Repositories via Lazy Injection.
+*   **Strict Prohibitions:** No `Model::find()`, `Model::where()`, or `Model::query()` in business logic.
 
-- **Models** chỉ để hold dữ liệu từ database và định nghĩa relationships
-- **Repository classes** là nơi duy nhất để tương tác với database
-- **Tuyệt đối cấm** gọi trực tiếp model class để truy vấn hoặc thay đổi dữ liệu
+---
 
-## **Required Repository Usage**
+## 2. REPOSITORY USAGE & INSTANTIATION
+### Pattern Enforcement
+*   **Instantiation:** Use `Repository::make()` (SingletonMakeable) or `app(Repository::class)`.
+*   **Abstract Methods:** Utilize `create()`, `update()`, `find()`, `findOneBy()`.
+*   **Query Builders:**
+    *   `getIsolatedQuery()`: For fresh, independent queries.
+    *   `getCurrentQuery()`: For chained operations (must reset with `null` after use).
 
-### **Thay vì gọi trực tiếp model:**
+### Optimization & Performance
+*   **Mass Updates:** 
+    *   Avoid direct `QueryBuilder->update()`. 
+    *   Use `LazyCollection` + loop `save()` on each Eloquent model to fire Model Events.
+    *   **Transactions:** Wrap in `DB::beginTransaction()`. Commit every `x` records using `%` operator. 
+    *   **Error Handling:** Rollback on critical failures; ensure partial success for non-SQL errors.
+*   **N+1 Prevention:** 
+    *   Always use `with(['relation' => fn($q) => $q->select('id', 'fk')])` before loops.
+    *   For ID-only access: Use `$model->relation->pluck('id')`.
 
-```php
-// ❌ DON'T: Gọi trực tiếp model
-$wallet = Wallet::find($id);
-$transactions = TransactionItem::where('wallet_id', $id)->get();
-$wallet = Wallet::where('domain', 'example.com')->first();
-$wallet = Wallet::query()->active()->get();
-```
+---
 
-### **Phải sử dụng repository:**
+## 3. LAZY DEPENDENCY INJECTION (DI)
+**Objective:** Reduce memory footprint & prevent Factory/CI initialization issues.
 
-```php
-// ✅ DO: Sử dụng repository
-$wallet = $this->walletRepository->find($id);
-$transactions = $this->transactionRepository->getByWalletId($id);
-// static call
-$wallet = WalletRepository::make()->findByDomain('example.com');
-$wallets = WalletRepository::make()->getActiveWallets();
-```
+### ❌ Anti-Pattern (Constructor Injection)
+Do **NOT** inject dependencies directly into `__construct()`.
 
-## **Repository Instantiation Pattern**
-
-### **Sử dụng SingletonMakeable trait:**
-
-```php
-// ✅ DO: Sử dụng make() method
-$walletRepository = WalletRepository::make();
-$transactionRepository = TransactionItemRepository::make();
-
-// ✅ DO: Hoặc sử dụng app() helper
-$walletRepository = app(WalletRepository::class);
-$transactionRepository = app(TransactionItemRepository::class);
-```
-
-### **Trong constructor:**
+### ✅ Standard: Getter-Based Lazy Loading (Recommended)
+Implement dependencies as nullable properties and resolve them via getter methods.
 
 ```php
-public function __construct()
-{
-    $this->walletRepository = WalletRepository::make();
-    $this->transactionRepository = TransactionItemRepository::make();
-}
-```
+protected ?ServiceOrRepo $dependency = null;
 
-## **AbstractRepository Methods**
-
-### **Các method cơ bản có sẵn:**
-
-```php
-// CRUD operations
-$repository->create($data);
-$repository->update($id, $data);
-$repository->delete($id);
-$repository->find($id);
-
-// Query operations
-$repository->findBy('field', 'value');
-$repository->findOneBy('field', 'value');
-$repository->findAll();
-
-// Custom queries
-$repository->getIsolatedQuery()->where('status', 'active')->get();
-$repository->getCurrentQuery()->whereBetween('created_at', [$start, $end])->get();
-```
-
-### **Query Builder Pattern:**
-
-```php
-// ✅ DO: Sử dụng getIsolatedQuery() cho custom queries
-$query = $this->walletRepository->getIsolatedQuery();
-$activeWallets = $query->where('status', 'active')
-    ->whereNotNull('mems')
-    ->get();
-
-// ✅ DO: Sử dụng getCurrentQuery() cho chained operations
-$query = $this->transactionRepository->getCurrentQuery();
-$query->where('wallet_id', $walletId)
-    ->orderByDesc('created_at')
-if($limit){
-    $this->transactionRepository->getCurrentQuery()->limit($limit)
-}
-$results = $query->get();
-$this->transactionRepository->currentQuery = null; // Reset sau khi dùng
-```
-
-## **Repository Structure Requirements**
-
-### **Mỗi model phải có repository tương ứng:**
-
-```php
-// ✅ DO: Tạo repository cho mỗi model
-class WalletRepository extends AbstractRepository
-{
-    public function getModelClassName()
-    {
-        return Wallet::class;
+protected function getDependency(): ServiceOrRepo {
+    if (!$this->dependency instanceof ServiceOrRepo) {
+        $this->dependency = app()->make(ServiceOrRepo::class);
     }
-    
-    // Custom methods
-    public function getActiveWallets(): Collection
-    {
+    return $this->dependency;
+}
+```
+
+### ✅ Standard: Single-Line Call
+For simple usage, use the `SingletonMakeable` trait: `ServiceClass::make()->method()`.
+
+---
+
+## 4. IMPLEMENTATION TEMPLATES
+
+### Repository Structure
+```php
+class WalletRepository extends AbstractRepository {
+    public function getModelClassName() => Wallet::class;
+
+    public function getActiveWallets(): Collection {
         return $this->getIsolatedQuery()->where('status', 'active')->get();
     }
 }
 ```
 
-### **Repository phải extend AbstractRepository:**
-
+### Optimized Batch Update Pattern
 ```php
-// ✅ DO: Extend AbstractRepository
-use MyLink\Cerm\Core\Repositories\AbstractRepository;
+DB::transaction(function () {
+    $this->repo->getIsolatedQuery()->cursor() // LazyCollection
+        ->each(function ($model, $index) {
+            $model->update(['status' => 'processed']);
+            if ($index % 100 === 0) { /* Optional: Intermediate logic */ }
+        });
+});
+```
 
-class TransactionItemRepository extends AbstractRepository
-{
-    public function getModelClassName()
-    {
-        return TransactionItem::class;
+### Service with Lazy DI
+```php
+class TransactionService {
+    protected ?TransactionRepository $repo = null;
+
+    protected function getRepo(): TransactionRepository {
+        return $this->repo ??= TransactionRepository::make();
+    }
+
+    public function process(int $id) {
+        return $this->getRepo()->find($id);
     }
 }
 ```
 
-## **Service Layer Pattern**
+---
 
-### **Services phải inject repository:**
+## 5. TESTING & VALIDATION
+*   Test Repository methods directly.
+*   Do **NOT** test Model methods for data retrieval.
+*   Seeders: The only exception where direct Model usage is allowed for initial data seeding.
 
-```php
-// ✅ DO: Inject repository trong service
-class TransactionService
-{
-    protected TransactionItemRepository $transactionRepository;
-    
-    public function __construct()
-    {
-        $this->transactionRepository = TransactionItemRepository::make();
-    }
-    
-    public function getTransactions(int $walletId): Collection
-    {
-        return $this->transactionRepository->getByWalletId($walletId);
-    }
-}
-```
+---
 
-## **Job và Console Command Pattern**
-
-### **Jobs phải sử dụng repository:**
-
-```php
-// ✅ DO: Sử dụng repository trong jobs
-class CollectWalletTransactionsJob implements ShouldQueue
-{
-    protected WalletRepository $walletRepository;
-    
-    public function __construct()
-    {
-        $this->walletRepository = WalletRepository::make();
-    }
-    
-    protected function collectForSpecificWallet(): void
-    {
-        $wallet = $this->walletRepository->find($this->options->getWalletId());
-        // ... rest of logic
-    }
-}
-```
-
-## **Filament Widget Pattern**
-
-### **Widgets phải sử dụng repository:**
-
-```php
-// ✅ DO: Sử dụng repository trong widgets
-class RevenueOverviewWidget extends BaseWidget
-{
-    protected TransactionItemRepository $transactionRepository;
-    protected WalletRepository $walletRepository;
-    
-    public function mount(): void
-    {
-        $this->transactionRepository = app(TransactionItemRepository::class);
-        $this->walletRepository = app(WalletRepository::class);
-    }
-    
-    protected function getStats(): array
-    {
-        $query = $this->transactionRepository->getIsolatedQuery();
-        $activeWallets = $this->walletRepository->getIsolatedQuery()->where('status', 'active')->count();
-        // ... rest of logic
-    }
-}
-```
-
-## **Helper và Utility Pattern**
-
-### **Helpers phải sử dụng repository:**
-
-```php
-// ✅ DO: Sử dụng repository trong helpers
-class CollectorOptions
-{
-    protected WalletRepository $walletRepository;
-    
-    public function __construct()
-    {
-        $this->walletRepository = app(WalletRepository::class);
-    }
-    
-    public function wallet(string $wallet): self
-    {
-        $w = $this->walletRepository->getIsolatedQuery()->where('domain', $wallet)->firstOrFail();
-        // ... rest of logic
-    }
-}
-```
-
-## **Exceptions và Error Handling**
-
-### **Sử dụng repository methods cho error handling:**
-
-```php
-// ✅ DO: Sử dụng repository methods
-try {
-    $wallet = $this->walletRepository->findOrFail($walletId);
-} catch (ModelNotFoundException $e) {
-    throw new Exception("Wallet with ID {$walletId} not found");
-}
-
-// ❌ DON'T: Gọi trực tiếp model
-try {
-    $wallet = Wallet::findOrFail($walletId);
-} catch (ModelNotFoundException $e) {
-    // This is wrong - should use repository
-}
-```
-
-## **Testing và Validation**
-
-### **Kiểm tra repository usage:**
-
-```php
-// ✅ DO: Test repository methods
-public function test_wallet_repository_finds_active_wallets()
-{
-    $repository = new WalletRepository();
-    $activeWallets = $repository->getActiveWallets();
-    
-    $this->assertCount(2, $activeWallets);
-    $this->assertTrue($activeWallets->every(fn($w) => $w->status === 'active'));
-}
-
-// ❌ DON'T: Test model methods directly
-public function test_wallet_model_finds_active_wallets()
-{
-    $activeWallets = Wallet::where('status', 'active')->get(); // Wrong!
-    // ... test logic
-}
-```
-
-## **Migration và Seeder**
-
-### **Seeders có thể sử dụng model trực tiếp:**
-
-```php
-// ✅ DO: Sử dụng model trong seeders (chỉ để tạo dữ liệu ban đầu)
-public function run(): void
-{
-    Wallet::create([
-        'domain' => 'example.com',
-        'status' => 'active'
-    ]);
-}
-```
-
-## **Summary**
-
-- **Models = Data Holders**: Chỉ để hold dữ liệu và relationships
-- **Repository = Data Access Layer**: Nơi duy nhất để tương tác với database
-- **Services/Jobs/Widgets**: Phải inject và sử dụng repository
-- **AbstractRepository**: Cung cấp các method cơ bản, extend để custom
-- **SingletonMakeable**: Sử dụng `RepositoryClass::make()` hoặc `app(RepositoryClass::class)`
-- **Query Builder**: Sử dụng `getIsolatedQuery()` hoặc `getCurrentQuery()`
-
-**Tuyệt đối cấm** gọi `Model::where()`, `Model::find()`, `Model::query()` trong business logic. Chỉ sử dụng repository methods.
+**User Note:** *Hãy áp dụng các quy tắc này một cách nghiêm ngặt. Ưu tiên sự chính xác của Repository Pattern và tính hiệu quả của Lazy DI.*
