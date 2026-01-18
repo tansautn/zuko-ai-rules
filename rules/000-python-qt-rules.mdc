@@ -18,7 +18,7 @@ alwaysApply: true
 - Controllers extend `core.BaseController` and only wire UI to events via `slot_map`.
     + Inherits orders: 1st: UI class, 2nd: BaseController
     + Never call `setupUi` in `__init__`, cause `BaseController` was called in super().__init__()
-- Handlers extend `core.Observer.Subscriber` and implement event logic (`on_<event>` methods). Keep business logic out of controllers.
+- Handlers extend `core.Observer.Subscriber` and implement event logic (`on<event_name_camel_case>` methods). Keep business logic out of controllers.
 - Services contain pure, UI-agnostic business logic. Prefer dependency injection and testability.
 - Components live under `windows/components/<ComponentName>/` with this structure:
   - `ComponentName.ui` (designer)
@@ -51,7 +51,7 @@ alwaysApply: true
 - Share a single `AcknowledgmentTracker` between sender/receiver in the same workflow.
 
 ## 6) Testing
-- Use the provided pytest setup in `tests_auto/` (see `TESTING_SETUP.md`).
+- Use the provided pytest setup in `tests/` (see `TESTING_SETUP.md`).
 - Write unit tests for core logic (services, ack layer) and integration tests for critical flows.
 - Commands:
   ```bash
