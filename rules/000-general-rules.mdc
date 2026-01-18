@@ -24,12 +24,12 @@ alwaysApply: true
   * **Diễn giải mục tiêu** (requirement/why),
   * **Kế hoạch thực hiện (step-by-step)**,
   * **Mermaid diagrams** nếu logic phức tạp hoặc liên quan đến nhiều modules.
-* 📂 Đặt tài liệu tại thư mục `docs/` trong module tương ứng nếu có.
+* 📂 Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng nếu có.
 * 🔁 Mọi chức năng (Feature, Event, Listener, UI, Policy, v.v...) **phải** có sơ đồ/phác thảo trước khi code.
 * ✅ Dùng những thứ sẵn có, hoặc tạo lớp base khi có thể để giảm boilerplate.
-* ✅ Luôn listing file in directories. Đọc sơ qua các file có `abstract` hoặc `base` trong filename xem chúng có gì hữu dụng với task đang thực thi không
-
-
+* ✅ Hỏi người dùng xem đã có abstract/base class hữu ích với task đang thực thi không. Nếu có, đọc để hiểu chúng và dùng chúng.
+* ✅ BẮT BUỘC: TUÂN THEO RULES RIÊNG CỦA TỪNG PROJECT. Nó thường nằm ở thư mục `.cursor/rules/`. Scan và đọc các file này để hiểu rules riêng của project.
+  TUÂN THỦ NGHIÊM NGẶT THEO CÁC RULES NÀY. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP !
 ---
 
 ### 6. LLM Behavior Guide
