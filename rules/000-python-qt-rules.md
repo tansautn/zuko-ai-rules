@@ -30,13 +30,24 @@ alwaysApply: true
 - Use the Observer (Publisher/Subscriber) for decoupled communication. Do not directly call other controllers.
 
 ## 3) Coding Style
-- Follow PEP 8/PEP 257 except naming to align with Qt conventions:
-  - Classes/Files: PascalCase (e.g., `MainController.py`)
-  - Methods/variables: camelCase
-  - Directories: lowercase with underscores (e.g., `windows/main`)
+**Follow PEP 8/PEP 257 excepts:**
+- Summary: **We follow Qt's conventions for naming. Never use `snake_case` in this project**
+      + Classes/Files: **PascalCase** (e.g., `MainController.py`)
+      + Methods/variables: **camelCase**
+      +Directories: **lowercase with underscores** (e.g., `windows/main`)
+- Override PEPs
+      + line max length: **180**
+      + quote-style = **"single"**
+      + indent-style = **"space"**
+      + docstring-code-format = **true**
+      + skip-magic-trailing-comma = **true**
 - Maximize readability: small methods, clear names, early returns, no deep nesting.
+    + Max allowed lines for a method: **40**
+    + Max continuous blank lines allowed: **20**
 - Type hints required for public functions/methods.
 - Errors must use `core.Exceptions` types; do not catch silently.
+- Event Handler method (Pub/Sub) must always use `on<CaptilizedCmelCase>` method name.
+  Even event name defined in `some_snake`, name always converted to camelCase when finding, connecting handler 
 
 ## 4) Logging & Diagnostics
 - Use `core.Logging.logger` everywhere (no `print`).

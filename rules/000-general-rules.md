@@ -1,7 +1,5 @@
 ---
-Description: General rules for all project.
-glob: **/*
-alwaysApply: true
+trigger: manual
 ---
 
 ## 🧠 Agent LLM Rules for Zuko's Projects

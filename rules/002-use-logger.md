@@ -1,7 +1,9 @@
 ---
-alwaysApply: false
+trigger: glob
+globs: *.py *.js *.ts *.jsx *.tsx *.php *.balde.php
 ---
-# Cursor Rules: Logger Usage Guidelines
+
+# Logger Usage Guidelines
 
 ## General Rules for Using Logger in Projects
 
@@ -249,4 +251,4 @@ If logs are not appearing:
    
    const config = Logger.config.getConfig();
    console.log('Logger configuration:', config);
-   ``` 
+   ```

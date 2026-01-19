@@ -1,7 +1,8 @@
 ---
+trigger: manual
 globs: .cursor/rules/*.mdc
-alwaysApply: false
 ---
+
 - **Required Rule Structure:**
 
   ```markdown

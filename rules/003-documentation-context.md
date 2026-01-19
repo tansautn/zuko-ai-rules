@@ -1,7 +1,7 @@
 ---
+trigger: model_decision
 description: Require using Context7 or Web Search to review library documentation before implementation
 globs: **/*
-alwaysApply: true
 ---
 
 # External Library Documentation Requirements
