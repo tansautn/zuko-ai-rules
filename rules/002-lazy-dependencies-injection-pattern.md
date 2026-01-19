@@ -1,3 +1,8 @@
+---
+trigger: glob
+globs: *.php *.blade.php
+---
+
 # Lazy Dependencies Injection Pattern
 
 Trong các dự án Laravel + Filament Modular Project.

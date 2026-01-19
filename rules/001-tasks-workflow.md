@@ -1,7 +1,7 @@
 ---
+trigger: model_decision
 description: Task Workflow System for project implementation across multiple task files within the docs/tasks/ directory.
 globs: **/*
-alwaysApply: true
 ---
 
 # Task Workflow System (Multi-File in `docs/tasks/` Directory)

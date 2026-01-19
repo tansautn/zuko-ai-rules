@@ -1,3 +1,7 @@
+---
+trigger: manual
+---
+
 # GitHub Workflow Template Instructions
 
 ## Yêu cầu chung

@@ -1,8 +1,8 @@
 ---
-description:
+trigger: glob
 globs: *.php *.py
-alwaysApply: false
 ---
+
 # RULE: REPO & LAZY DI IN LARAVEL/PHP App
 
 ## 1. CORE ARCHITECTURE PRINCIPLES
