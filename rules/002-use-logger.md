@@ -1,5 +1,5 @@
 ---
-trigger: glob
+trigger: model_decision
 globs: *.py *.js *.ts *.jsx *.tsx *.php *.balde.php
 ---
 
