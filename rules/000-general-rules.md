@@ -1,5 +1,5 @@
 ---
-trigger: manual
+trigger: always
 ---
 
 ## 🧠 Agent LLM Rules for Zuko's Projects
@@ -24,10 +24,11 @@ trigger: manual
   * **Mermaid diagrams** nếu logic phức tạp hoặc liên quan đến nhiều modules.
 * 📂 Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng nếu có.
 * 🔁 Mọi chức năng (Feature, Event, Listener, UI, Policy, v.v...) **phải** có sơ đồ/phác thảo trước khi code.
-* ✅ Dùng những thứ sẵn có, hoặc tạo lớp base khi có thể để giảm boilerplate.
-* ✅ Hỏi người dùng xem đã có abstract/base class hữu ích với task đang thực thi không. Nếu có, đọc để hiểu chúng và dùng chúng.
-* ✅ BẮT BUỘC: TUÂN THEO RULES RIÊNG CỦA TỪNG PROJECT. Nó thường nằm ở thư mục `.cursor/rules/`. Scan và đọc các file này để hiểu rules riêng của project.
+* ✅ BẮT BUỘC: TUÂN THEO RULES RIÊNG CỦA TỪNG PROJECT. Nó thường nằm ở thư mục `.(cursor|agent|aiassittant)/rules/`. Scan và đọc các file này để hiểu rules riêng của project.
   TUÂN THỦ NGHIÊM NGẶT THEO CÁC RULES NÀY. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP !
+* ✅ Dùng những thứ sẵn có, hoặc tạo lớp base khi có thể để giảm boilerplate.
+  - Các rule có prefix `002-` thường là các chỉ dẫn về các hạng mục đóng vai trò là base trong từng dự án. Hãy đọc chúng trước khi định viết bất cứ dòng code nào
+* ✅ Hỏi người dùng xem đã có abstract/base class hữu ích với task đang thực thi không. Nếu có, đọc để hiểu chúng và dùng chúng.
 ---
 
 ### 6. LLM Behavior Guide
