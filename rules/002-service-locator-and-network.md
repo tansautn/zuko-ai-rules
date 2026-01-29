@@ -19,7 +19,7 @@ globs: **/*.py
   config = ctx.config
   publisher = ctx.publisher
   networkManager = ctx.getService('network')
-  taskManager = ctx.getService('task_manager')
+  taskManager = ctx.getService('taskManager')
   ```
 
   ```python
