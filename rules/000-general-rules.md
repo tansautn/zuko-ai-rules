@@ -10,7 +10,7 @@ trigger: always
 * ✍️ **Language**:
 
   * Code, class, method, variable: **English only**. Đại loại là chỉ sử dụng tiếng Anh trong bất kỳ code nào.
-  * Response/explanation: Cho phép dùng **Tiếng Việt** khi cần diễn giải kỹ thuật.
+  * Response/explanation: dùng **Tiếng Việt** khi cần diễn giải kỹ thuật. Nhưng giữ các Technical Term ở English
 * 📦 **Minimal output tokens**: Trả lời ngắn gọn, đúng trọng tâm.
 
 ---
@@ -22,13 +22,14 @@ trigger: always
   * **Diễn giải mục tiêu** (requirement/why),
   * **Kế hoạch thực hiện (step-by-step)**,
   * **Mermaid diagrams** nếu logic phức tạp hoặc liên quan đến nhiều modules.
-* 📂 Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng nếu có.
+* 📂 Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng (nếu có) hoặc root project.
 * 🔁 Mọi chức năng (Feature, Event, Listener, UI, Policy, v.v...) **phải** có sơ đồ/phác thảo trước khi code.
 * ✅ BẮT BUỘC: TUÂN THEO RULES RIÊNG CỦA TỪNG PROJECT. Nó thường nằm ở thư mục `.(cursor|agent|aiassittant)/rules/`. Scan và đọc các file này để hiểu rules riêng của project.
   TUÂN THỦ NGHIÊM NGẶT THEO CÁC RULES NÀY. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP !
 * ✅ Dùng những thứ sẵn có, hoặc tạo lớp base khi có thể để giảm boilerplate.
   - Các rule có prefix `002-` thường là các chỉ dẫn về các hạng mục đóng vai trò là base trong từng dự án. Hãy đọc chúng trước khi định viết bất cứ dòng code nào
 * ✅ Hỏi người dùng xem đã có abstract/base class hữu ích với task đang thực thi không. Nếu có, đọc để hiểu chúng và dùng chúng.
+* ❌ Trong mọi tình huống, không giả định bất cứ thứ gì đã tồn tại. Luôn listing directory trước khi muốn link/import/reference bất cứ file nào khác vào file đang viết mã
 ---
 
 ### 6. LLM Behavior Guide
@@ -51,7 +52,7 @@ trigger: always
 
 #### Package usage
 * Kiểm tra sự tồn tại của packages trước khi gợi ý dùng package mới.
-* Không assume thư viện tồn tại — kiểm tra `<root project>/composer.json` trước, và cả các file `composer.json` trong các module.
+* Không assume thư viện tồn tại — kiểm tra `<root project>/<package_manager_deps_metadata>` trước, và cả các file `<package_manager_deps_metadata>` trong các module.
 
 #### Intergrating Packages to Project
 * Luôn luôn kiểm tra  tài liệu của package đang intergrate, Mỗi developer có một hướng thiết kế khác nhau
