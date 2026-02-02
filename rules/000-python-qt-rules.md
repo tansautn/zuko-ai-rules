@@ -1,8 +1,10 @@
 ---
+trigger: always_on
 description: Rule for Python, PySide6 project
-globs: **/*.py
+globs: **/*.py, **/*.ui
 alwaysApply: true
 ---
+
 # PySide6 Project Rules
 
 ## 1) UI-First Workflow (Mandatory)
@@ -40,7 +42,7 @@ alwaysApply: true
     + Classes/Files: **PascalCase** (e.g., `MainController.py`)
     + Methods/variables: **camelCase**
     + Directories: **lowercase with underscores** (e.g., `windows/main`)
-    + **Pub/Sub**: _Event Handler_ must always use `on<CaptilizedCmelCase>` method name.
+    + **Pub/Sub**: _Event Handler_ must always use `on<CaptilizedCamelCase>` method name.
 - **Override PEPs**
     + line max length: **180**
     + quote-style = **"single"**
@@ -49,7 +51,7 @@ alwaysApply: true
     + skip-magic-trailing-comma = **true**
 - **Maximize readability**: small methods, clear names, early returns, no deep nesting.
     + Max allowed lines for a method: **40**
-    + Max continuous blank lines allowed: **20**
+    + Max continuous blank lines allowed: **2**
 - **Type hints**: required for public functions/methods.
     + **Errors**: must use `core.Exceptions` types; do not catch silently.
 
@@ -57,6 +59,7 @@ alwaysApply: true
 - Use `core.Logging.logger` everywhere (no `print`).
 - Log key start/end points of important flows, include contextual data (avoid secrets).
 - In async/multithreaded contexts, include identifiers (task id, thread info) in logs when available.
+- In catching block of try-catch. Must always provide exeception to `logger`. E: `logger.opt(exception=exObject).error(str(exObject))`
 
 ## 5) ACK Mechanism (If coordination is needed)
 - When a task emits events that require downstream processing before cleanup, use the ACK mechanism per `docs/provided-by-base/ACKNOWLEDGMENT_MECHANISM.md`:

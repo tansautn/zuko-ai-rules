@@ -1,4 +1,5 @@
 ---
+trigger: always_on
 description: Task Workflow System for project implementation across multiple task files within the docs/tasks/ directory.
 globs: **/*
 alwaysApply: true
