@@ -1,25 +1,18 @@
 ---
-alwaysApply: true
+trigger: always_on
 ---
+
 ## 🧠 Agent LLM Rules for Laravel + Filament Modular Project
 
 ### 1. General Rules
 
 * ĐỌC : [General rules for all project](mdc:./000-general-rules.mdc)
-* Áp dụng cho tất cả project của tôi. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP
+* Áp dụng cho tất cả project laravel của tôi. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP
 
 ### 2. Architecture & Structure
 
-* 🧱 Dự án Laravel 12, **modular structure** với:
-
-  * `nwidart/laravel-modules` – tách biệt domain logic.
-  * `filament/filament` – Admin CP
-  * `bezhansalleh/filament-shield` – Role/Permission
-* 👇 **Mỗi module** phải:
-
-  * Có file `composer.json`
-  * Có `Providers`, `Routes`, `Events`, `Models`, `Policies`, `Docs`, `Tests`, v.v...
-  * **Không dùng Facade ngoài `AppServiceProvider` nếu không cần thiết**
+* 🧱 Dự án Laravel
+  * sử dụng `filament/filament` làm Admin CP
 * 📁 Tên thư mục lowercase\_snake\_case, class PascalCase, function camelCase
 * Thông thường môi trường phát triển không nằm ở local hoặc chỉ có sourcecode mà không có kết nối DB.
     + Bỏ qua các bước như run migration hay exec DB schema update

@@ -1,5 +1,5 @@
 ---
-trigger: model_decision
+trigger: manual
 description: Require using Context7 or Web Search to review library documentation before implementation
 globs: **/*
 ---
