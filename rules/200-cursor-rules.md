@@ -1,6 +1,6 @@
 ---
 trigger: manual
-globs: .cursor/rules/*.mdc
+globs: .agents/rules/*.mdc
 ---
 
 - **Required Rule Structure:**
