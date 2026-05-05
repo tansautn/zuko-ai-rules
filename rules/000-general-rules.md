@@ -26,7 +26,7 @@ trigger: always
 * 📂 Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng nếu có.
 * 🔁 Mọi chức năng (Feature, Event, Listener, UI, Policy, v.v...) **phải** có sơ đồ/phác thảo trước khi code.
 * ✅ Dùng những thứ sẵn có, hoặc tạo lớp base khi có thể để giảm boilerplate.
-* ✅ Hỏi người dùng xem đã có abstract/base class hữu ích với task đang thực thi không. Nếu có, đọc để hiểu chúng và dùng chúng.
+* ✅ Nếu dự án hiện tại đã có graph-index được cung cấp bởi `codebase-memory-mcp`. Ưu tiên sử dụng MCP thay vì grep hay fuzy search
 * ✅ BẮT BUỘC: TUÂN THEO RULES RIÊNG CỦA TỪNG PROJECT. Nó thường nằm ở thư mục `.agent/rules/`. Scan và đọc các file này để hiểu rules riêng của project.
   TUÂN THỦ NGHIÊM NGẶT THEO CÁC RULES NÀY. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP !
 ---
