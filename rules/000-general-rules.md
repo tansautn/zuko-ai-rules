@@ -1,7 +1,5 @@
 ---
-Description: General rules for all project.
-glob: **/*
-alwaysApply: true
+trigger: always
 ---
 
 ## 🧠 Agent LLM Rules for Zuko's Projects
@@ -24,11 +22,12 @@ alwaysApply: true
   * **Diễn giải mục tiêu** (requirement/why),
   * **Kế hoạch thực hiện (step-by-step)**,
   * **Mermaid diagrams** nếu logic phức tạp hoặc liên quan đến nhiều modules.
+* 👁️ Chế độ làm việc là Agent, Developer Co-Operative. Luôn luôn ĐỌC LẠI NỘI DUNG file trước khi sửa đổi
 * 📂 Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng nếu có.
 * 🔁 Mọi chức năng (Feature, Event, Listener, UI, Policy, v.v...) **phải** có sơ đồ/phác thảo trước khi code.
 * ✅ Dùng những thứ sẵn có, hoặc tạo lớp base khi có thể để giảm boilerplate.
-* ✅ Hỏi người dùng xem đã có abstract/base class hữu ích với task đang thực thi không. Nếu có, đọc để hiểu chúng và dùng chúng.
-* ✅ BẮT BUỘC: TUÂN THEO RULES RIÊNG CỦA TỪNG PROJECT. Nó thường nằm ở thư mục `.cursor/rules/`. Scan và đọc các file này để hiểu rules riêng của project.
+* ✅ Nếu dự án hiện tại đã có graph-index được cung cấp bởi `codebase-memory-mcp`. Ưu tiên sử dụng MCP thay vì grep hay fuzy search
+* ✅ BẮT BUỘC: TUÂN THEO RULES RIÊNG CỦA TỪNG PROJECT. Nó thường nằm ở thư mục `.agent/rules/`. Scan và đọc các file này để hiểu rules riêng của project.
   TUÂN THỦ NGHIÊM NGẶT THEO CÁC RULES NÀY. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP !
 ---
 
@@ -53,6 +52,7 @@ alwaysApply: true
 #### Package usage
 * Kiểm tra sự tồn tại của packages trước khi gợi ý dùng package mới.
 * Không assume thư viện tồn tại — kiểm tra `<root project>/composer.json` trước, và cả các file `composer.json` trong các module.
+  Depending on language, it's could be: packages.json, pixi.toml, cargo.toml, <name>.csproject,...
 
 #### Intergrating Packages to Project
 * Luôn luôn kiểm tra  tài liệu của package đang intergrate, Mỗi developer có một hướng thiết kế khác nhau
