@@ -1,1 +1,0 @@
-D:/MyLink/git_repositories/mylink_paste-helper/.aiassistant/rules/002-cursor-rules-logger.mdc

@@ -1,1 +1,0 @@
-D:/MyLink/git_repositories/mylink_paste-helper/.aiassistant/rules/001-tasks-workflow.mdc
