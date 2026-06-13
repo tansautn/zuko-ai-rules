@@ -39,7 +39,9 @@ alwaysApply: true
 
 #### **Detailed intrustions**
 - **Follow PEP 8/PEP 257 excepts:**
-    + Classes/Files: **PascalCase** (e.g., `MainController.py`)
+    + Classes: **PascalCase** (e.g., `MainController`)
+    + Files (module in py-mean): **camelCase** (e.g., mainController.py)
+                                 **legacy PascalCase named files should leave untouched**
     + Methods/variables: **camelCase**
     + Directories: **lowercase with underscores** (e.g., `windows/main`)
     + **Pub/Sub**: _Event Handler_ must always use `on<CaptilizedCamelCase>` method name.
