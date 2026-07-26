@@ -31,7 +31,14 @@ error() {
 # ==========================================
 # ENSURE ZIP IS AVAILABLE
 # ==========================================
+GNUWIN32_PATH="/c/Program Files (x86)/GnuWin32/bin"
+
 ensure_zip() {
+    # Add GnuWin32 to PATH if exists
+    if [[ -d "$GNUWIN32_PATH" ]]; then
+        export PATH="$GNUWIN32_PATH:$PATH"
+    fi
+
     if command -v zip &> /dev/null && command -v unzip &> /dev/null; then
         return 0
     fi
@@ -39,10 +46,10 @@ ensure_zip() {
     if is_windows; then
         log "zip/unzip not found. Installing via winget..."
         winget install GnuWin32.Zip --accept-source-agreements --accept-package-agreements 2>/dev/null || true
+        winget install GnuWin32.UnZip --accept-source-agreements --accept-package-agreements 2>/dev/null || true
 
-        # Refresh PATH
-        local gnuwin_path="/c/Program Files (x86)/GnuWin32/bin"
-        [[ -d "$gnuwin_path" ]] && export PATH="$gnuwin_path:$PATH"
+        # Add to PATH
+        export PATH="$GNUWIN32_PATH:$PATH"
 
         if command -v zip &> /dev/null; then
             log "zip installed successfully"
