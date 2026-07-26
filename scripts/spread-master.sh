@@ -16,12 +16,65 @@ is_ci() {
     [[ -n "$GITHUB_ACTIONS" || -n "$CI" ]]
 }
 
+is_windows() {
+    [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]] || [[ -n "${WINDIR:-}" ]]
+}
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
 error() {
     log "ERROR: $*" >&2
+}
+
+# ==========================================
+# ZIP/UNZIP HELPERS (Windows PowerShell fallback)
+# ==========================================
+do_zip() {
+    local zip_file="$1"
+    shift
+    local files=("$@")
+
+    if command -v zip &> /dev/null; then
+        printf '%s\n' "${files[@]}" | zip -@ "$zip_file" > /dev/null
+    elif is_windows; then
+        # Use PowerShell Compress-Archive
+        local win_zip_path
+        win_zip_path=$(cygpath -w "$PROJECT_ROOT/$zip_file" 2>/dev/null || echo "$PROJECT_ROOT/$zip_file")
+
+        # Create temp file list for PowerShell
+        local file_list=""
+        for f in "${files[@]}"; do
+            local win_path
+            win_path=$(cygpath -w "$PROJECT_ROOT/$f" 2>/dev/null || echo "$PROJECT_ROOT/$f")
+            file_list+="'$win_path',"
+        done
+        file_list="${file_list%,}"  # Remove trailing comma
+
+        powershell.exe -NoProfile -Command "Compress-Archive -Path @($file_list) -DestinationPath '$win_zip_path' -Force" 2>/dev/null
+    else
+        error "No zip tool available"
+        return 1
+    fi
+}
+
+do_unzip() {
+    local zip_file="$1"
+    local dest_dir="$2"
+
+    if command -v unzip &> /dev/null; then
+        unzip -o "$zip_file" -d "$dest_dir" > /dev/null
+    elif is_windows; then
+        local win_zip_path win_dest_path
+        win_zip_path=$(cygpath -w "$zip_file" 2>/dev/null || echo "$zip_file")
+        win_dest_path=$(cygpath -w "$dest_dir" 2>/dev/null || echo "$dest_dir")
+
+        powershell.exe -NoProfile -Command "Expand-Archive -Path '$win_zip_path' -DestinationPath '$win_dest_path' -Force" 2>/dev/null
+    else
+        error "No unzip tool available"
+        return 1
+    fi
 }
 
 # ==========================================
@@ -71,12 +124,24 @@ pre_run() {
 
         # Create zip preserving relative paths
         cd "$PROJECT_ROOT"
-        echo "$UNTRACKED_FILES" | zip -@ "$UNTRACKED_ZIP" > /dev/null
 
-        log "Backed up $(echo "$UNTRACKED_FILES" | wc -l | xargs) untracked files"
+        # Convert newline-separated list to array
+        local files_array=()
+        while IFS= read -r f; do
+            [[ -n "$f" ]] && files_array+=("$f")
+        done <<< "$UNTRACKED_FILES"
 
-        # Remove untracked files to prevent interference
-        echo "$UNTRACKED_FILES" | xargs rm -f
+        if do_zip "$UNTRACKED_ZIP" "${files_array[@]}"; then
+            log "Backed up ${#files_array[@]} untracked files"
+
+            # Remove untracked files to prevent interference
+            for f in "${files_array[@]}"; do
+                rm -f "$PROJECT_ROOT/$f"
+            done
+        else
+            error "Failed to backup untracked files"
+            exit 1
+        fi
     else
         log "No untracked files to backup"
     fi
@@ -95,11 +160,14 @@ post_run() {
     cd "$PROJECT_ROOT"
 
     # Restore untracked files from zip
-    if [[ -f "$UNTRACKED_ZIP" ]]; then
+    if [[ -f "$PROJECT_ROOT/$UNTRACKED_ZIP" ]]; then
         log "Restoring untracked files from $UNTRACKED_ZIP..."
-        unzip -o "$UNTRACKED_ZIP" > /dev/null
-        rm -f "$UNTRACKED_ZIP"
-        log "Untracked files restored"
+        if do_unzip "$PROJECT_ROOT/$UNTRACKED_ZIP" "$PROJECT_ROOT"; then
+            rm -f "$PROJECT_ROOT/$UNTRACKED_ZIP"
+            log "Untracked files restored"
+        else
+            error "Failed to restore untracked files - zip kept at $PROJECT_ROOT/$UNTRACKED_ZIP"
+        fi
     else
         log "No untracked files backup to restore"
     fi
