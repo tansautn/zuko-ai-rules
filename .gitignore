@@ -6,5 +6,5 @@
 *.iml
 out
 gen
-untracked_files.zip
+untracked_files.*
 .claude
