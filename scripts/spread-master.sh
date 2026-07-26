@@ -37,22 +37,53 @@ do_zip() {
     local files=("$@")
 
     if command -v zip &> /dev/null; then
-        printf '%s\n' "${files[@]}" | zip -@ "$zip_file" > /dev/null
+        # -y: store symlinks as symlinks
+        # -r: recursive for directories
+        printf '%s\n' "${files[@]}" | zip -ry -@ "$zip_file" > /dev/null
     elif is_windows; then
-        # Use PowerShell Compress-Archive
+        # PowerShell fallback - doesn't support symlinks well
+        # Save symlink info separately, then zip regular files
         local win_zip_path
         win_zip_path=$(cygpath -w "$PROJECT_ROOT/$zip_file" 2>/dev/null || echo "$PROJECT_ROOT/$zip_file")
 
-        # Create temp file list for PowerShell
-        local file_list=""
-        for f in "${files[@]}"; do
-            local win_path
-            win_path=$(cygpath -w "$PROJECT_ROOT/$f" 2>/dev/null || echo "$PROJECT_ROOT/$f")
-            file_list+="'$win_path',"
-        done
-        file_list="${file_list%,}"  # Remove trailing comma
+        # Separate symlinks from regular files/dirs
+        local regular_files=()
+        local symlinks_file="$PROJECT_ROOT/.symlinks_backup.txt"
+        rm -f "$symlinks_file"
 
-        powershell.exe -NoProfile -Command "Compress-Archive -Path @($file_list) -DestinationPath '$win_zip_path' -Force" 2>/dev/null
+        for f in "${files[@]}"; do
+            local full_path="$PROJECT_ROOT/$f"
+            if [[ -L "$full_path" ]]; then
+                # Save symlink: path|target
+                local target
+                target=$(readlink "$full_path")
+                echo "$f|$target" >> "$symlinks_file"
+                log "  Symlink saved: $f -> $target"
+            else
+                regular_files+=("$f")
+            fi
+        done
+
+        # Zip regular files/dirs
+        if [[ ${#regular_files[@]} -gt 0 ]]; then
+            local file_list=""
+            for f in "${regular_files[@]}"; do
+                local win_path
+                win_path=$(cygpath -w "$PROJECT_ROOT/$f" 2>/dev/null || echo "$PROJECT_ROOT/$f")
+                file_list+="'$win_path',"
+            done
+            file_list="${file_list%,}"
+
+            powershell.exe -NoProfile -Command "Compress-Archive -Path @($file_list) -DestinationPath '$win_zip_path' -Force" 2>/dev/null
+        fi
+
+        # Add symlinks file to zip if exists
+        if [[ -f "$symlinks_file" ]]; then
+            local win_symlinks_path
+            win_symlinks_path=$(cygpath -w "$symlinks_file" 2>/dev/null || echo "$symlinks_file")
+            powershell.exe -NoProfile -Command "Compress-Archive -Path '$win_symlinks_path' -DestinationPath '$win_zip_path' -Update" 2>/dev/null
+            rm -f "$symlinks_file"
+        fi
     else
         error "No zip tool available"
         return 1
@@ -71,6 +102,33 @@ do_unzip() {
         win_dest_path=$(cygpath -w "$dest_dir" 2>/dev/null || echo "$dest_dir")
 
         powershell.exe -NoProfile -Command "Expand-Archive -Path '$win_zip_path' -DestinationPath '$win_dest_path' -Force" 2>/dev/null
+
+        # Restore symlinks from .symlinks_backup.txt if exists
+        local symlinks_file="$dest_dir/.symlinks_backup.txt"
+        if [[ -f "$symlinks_file" ]]; then
+            log "Restoring symlinks..."
+            while IFS='|' read -r link_path target; do
+                [[ -z "$link_path" ]] && continue
+                local full_link="$dest_dir/$link_path"
+                mkdir -p "$(dirname "$full_link")"
+
+                # Remove existing file/dir if any
+                rm -rf "$full_link"
+
+                # Create symlink (use cmd for Windows junction if it's a dir target)
+                if [[ -d "$target" ]]; then
+                    # Junction for directory
+                    local win_link win_target
+                    win_link=$(cygpath -w "$full_link" 2>/dev/null || echo "$full_link")
+                    win_target=$(cygpath -w "$target" 2>/dev/null || echo "$target")
+                    cmd.exe /c "mklink /J \"$win_link\" \"$win_target\"" > /dev/null 2>&1 || ln -s "$target" "$full_link"
+                else
+                    ln -s "$target" "$full_link"
+                fi
+                log "  Restored symlink: $link_path -> $target"
+            done < "$symlinks_file"
+            rm -f "$symlinks_file"
+        fi
     else
         error "No unzip tool available"
         return 1
@@ -131,12 +189,24 @@ pre_run() {
             [[ -n "$f" ]] && files_array+=("$f")
         done <<< "$UNTRACKED_FILES"
 
-        if do_zip "$UNTRACKED_ZIP" "${files_array[@]}"; then
-            log "Backed up ${#files_array[@]} untracked files"
+        if [[ ${#files_array[@]} -eq 0 ]]; then
+            log "No untracked files to backup"
+        elif do_zip "$UNTRACKED_ZIP" "${files_array[@]}"; then
+            log "Backed up ${#files_array[@]} untracked items"
 
-            # Remove untracked files to prevent interference
+            # Remove untracked files/dirs/symlinks
             for f in "${files_array[@]}"; do
-                rm -f "$PROJECT_ROOT/$f"
+                local full_path="$PROJECT_ROOT/$f"
+                if [[ -L "$full_path" ]]; then
+                    # Symlink/junction - unlink
+                    rm -f "$full_path" 2>/dev/null || unlink "$full_path" 2>/dev/null || true
+                elif [[ -d "$full_path" ]]; then
+                    # Directory - remove recursively
+                    rm -rf "$full_path"
+                else
+                    # Regular file
+                    rm -f "$full_path"
+                fi
             done
         else
             error "Failed to backup untracked files"
