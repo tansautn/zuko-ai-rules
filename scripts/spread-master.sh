@@ -29,109 +29,31 @@ error() {
 }
 
 # ==========================================
-# ZIP/UNZIP HELPERS (Windows PowerShell fallback)
+# ENSURE ZIP IS AVAILABLE
 # ==========================================
-do_zip() {
-    local zip_file="$1"
-    shift
-    local files=("$@")
-
-    if command -v zip &> /dev/null; then
-        # -y: store symlinks as symlinks
-        # -r: recursive for directories
-        printf '%s\n' "${files[@]}" | zip -ry -@ "$zip_file" > /dev/null
-    elif is_windows; then
-        # PowerShell fallback - doesn't support symlinks well
-        # Save symlink info separately, then zip regular files
-        local win_zip_path
-        win_zip_path=$(cygpath -w "$PROJECT_ROOT/$zip_file" 2>/dev/null || echo "$PROJECT_ROOT/$zip_file")
-
-        # Separate symlinks from regular files/dirs
-        local regular_files=()
-        local symlinks_file="$PROJECT_ROOT/.symlinks_backup.txt"
-        rm -f "$symlinks_file"
-
-        for f in "${files[@]}"; do
-            local full_path="$PROJECT_ROOT/$f"
-            if [[ -L "$full_path" ]]; then
-                # Save symlink: path|target
-                local target
-                target=$(readlink "$full_path")
-                echo "$f|$target" >> "$symlinks_file"
-                log "  Symlink saved: $f -> $target"
-            else
-                regular_files+=("$f")
-            fi
-        done
-
-        # Zip regular files/dirs
-        if [[ ${#regular_files[@]} -gt 0 ]]; then
-            local file_list=""
-            for f in "${regular_files[@]}"; do
-                local win_path
-                win_path=$(cygpath -w "$PROJECT_ROOT/$f" 2>/dev/null || echo "$PROJECT_ROOT/$f")
-                file_list+="'$win_path',"
-            done
-            file_list="${file_list%,}"
-
-            powershell.exe -NoProfile -Command "Compress-Archive -Path @($file_list) -DestinationPath '$win_zip_path' -Force" 2>/dev/null
-        fi
-
-        # Add symlinks file to zip if exists
-        if [[ -f "$symlinks_file" ]]; then
-            local win_symlinks_path
-            win_symlinks_path=$(cygpath -w "$symlinks_file" 2>/dev/null || echo "$symlinks_file")
-            powershell.exe -NoProfile -Command "Compress-Archive -Path '$win_symlinks_path' -DestinationPath '$win_zip_path' -Update" 2>/dev/null
-            rm -f "$symlinks_file"
-        fi
-    else
-        error "No zip tool available"
-        return 1
+ensure_zip() {
+    if command -v zip &> /dev/null && command -v unzip &> /dev/null; then
+        return 0
     fi
-}
 
-do_unzip() {
-    local zip_file="$1"
-    local dest_dir="$2"
+    if is_windows; then
+        log "zip/unzip not found. Installing via winget..."
+        winget install GnuWin32.Zip --accept-source-agreements --accept-package-agreements 2>/dev/null || true
 
-    if command -v unzip &> /dev/null; then
-        unzip -o "$zip_file" -d "$dest_dir" > /dev/null
-    elif is_windows; then
-        local win_zip_path win_dest_path
-        win_zip_path=$(cygpath -w "$zip_file" 2>/dev/null || echo "$zip_file")
-        win_dest_path=$(cygpath -w "$dest_dir" 2>/dev/null || echo "$dest_dir")
+        # Refresh PATH
+        local gnuwin_path="/c/Program Files (x86)/GnuWin32/bin"
+        [[ -d "$gnuwin_path" ]] && export PATH="$gnuwin_path:$PATH"
 
-        powershell.exe -NoProfile -Command "Expand-Archive -Path '$win_zip_path' -DestinationPath '$win_dest_path' -Force" 2>/dev/null
-
-        # Restore symlinks from .symlinks_backup.txt if exists
-        local symlinks_file="$dest_dir/.symlinks_backup.txt"
-        if [[ -f "$symlinks_file" ]]; then
-            log "Restoring symlinks..."
-            while IFS='|' read -r link_path target; do
-                [[ -z "$link_path" ]] && continue
-                local full_link="$dest_dir/$link_path"
-                mkdir -p "$(dirname "$full_link")"
-
-                # Remove existing file/dir if any
-                rm -rf "$full_link"
-
-                # Create symlink (use cmd for Windows junction if it's a dir target)
-                if [[ -d "$target" ]]; then
-                    # Junction for directory
-                    local win_link win_target
-                    win_link=$(cygpath -w "$full_link" 2>/dev/null || echo "$full_link")
-                    win_target=$(cygpath -w "$target" 2>/dev/null || echo "$target")
-                    cmd.exe /c "mklink /J \"$win_link\" \"$win_target\"" > /dev/null 2>&1 || ln -s "$target" "$full_link"
-                else
-                    ln -s "$target" "$full_link"
-                fi
-                log "  Restored symlink: $link_path -> $target"
-            done < "$symlinks_file"
-            rm -f "$symlinks_file"
+        if command -v zip &> /dev/null; then
+            log "zip installed successfully"
+            return 0
+        else
+            error "Failed to install zip. Please install manually: winget install GnuWin32.Zip"
+            exit 1
         fi
     else
-        error "No unzip tool available"
-        return 1
+        error "zip/unzip not found. Install with your package manager."
+        exit 1
     fi
 }
 
@@ -191,7 +113,8 @@ pre_run() {
 
         if [[ ${#files_array[@]} -eq 0 ]]; then
             log "No untracked files to backup"
-        elif do_zip "$UNTRACKED_ZIP" "${files_array[@]}"; then
+        # -y: store symlinks as symlinks, -r: recursive
+        elif printf '%s\n' "${files_array[@]}" | zip -ry -@ "$UNTRACKED_ZIP" > /dev/null; then
             log "Backed up ${#files_array[@]} untracked items"
 
             # Remove untracked files/dirs/symlinks
@@ -232,7 +155,7 @@ post_run() {
     # Restore untracked files from zip
     if [[ -f "$PROJECT_ROOT/$UNTRACKED_ZIP" ]]; then
         log "Restoring untracked files from $UNTRACKED_ZIP..."
-        if do_unzip "$PROJECT_ROOT/$UNTRACKED_ZIP" "$PROJECT_ROOT"; then
+        if unzip -o "$PROJECT_ROOT/$UNTRACKED_ZIP" -d "$PROJECT_ROOT" > /dev/null; then
             rm -f "$PROJECT_ROOT/$UNTRACKED_ZIP"
             log "Untracked files restored"
         else
@@ -257,6 +180,9 @@ trap post_run EXIT
 # ==========================================
 # MAIN
 # ==========================================
+
+# Ensure zip is available
+ensure_zip
 
 # Run pre-stage
 pre_run
