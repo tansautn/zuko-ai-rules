@@ -8,7 +8,7 @@ set -e
 
 MASTER_BRANCH="master"
 CONFLICT_CHECK_INTERVAL=10
-UNTRACKED_ZIP="untracked_files.zip"
+UNTRACKED_ARCHIVE="untracked_files.tar.gz"
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
 
 # Detect if running in CI
@@ -28,41 +28,6 @@ error() {
     log "ERROR: $*" >&2
 }
 
-# ==========================================
-# ENSURE ZIP IS AVAILABLE
-# ==========================================
-GNUWIN32_PATH="/c/Program Files (x86)/GnuWin32/bin"
-
-ensure_zip() {
-    # Add GnuWin32 to PATH if exists
-    if [[ -d "$GNUWIN32_PATH" ]]; then
-        export PATH="$GNUWIN32_PATH:$PATH"
-    fi
-
-    if command -v zip &> /dev/null && command -v unzip &> /dev/null; then
-        return 0
-    fi
-
-    if is_windows; then
-        log "zip/unzip not found. Installing via winget..."
-        winget install GnuWin32.Zip --accept-source-agreements --accept-package-agreements 2>/dev/null || true
-        winget install GnuWin32.UnZip --accept-source-agreements --accept-package-agreements 2>/dev/null || true
-
-        # Add to PATH
-        export PATH="$GNUWIN32_PATH:$PATH"
-
-        if command -v zip &> /dev/null; then
-            log "zip installed successfully"
-            return 0
-        else
-            error "Failed to install zip. Please install manually: winget install GnuWin32.Zip"
-            exit 1
-        fi
-    else
-        error "zip/unzip not found. Install with your package manager."
-        exit 1
-    fi
-}
 
 # ==========================================
 # PRE-RUN STAGE
@@ -104,40 +69,29 @@ pre_run() {
     UNTRACKED_FILES=$(git ls-files --others --exclude-standard)
 
     if [[ -n "$UNTRACKED_FILES" ]]; then
-        log "Found untracked files, backing up to $UNTRACKED_ZIP..."
+        log "Found untracked files, backing up to $UNTRACKED_ARCHIVE..."
 
-        # Remove old zip if exists
-        rm -f "$PROJECT_ROOT/$UNTRACKED_ZIP"
+        # Remove old archive if exists
+        rm -f "$PROJECT_ROOT/$UNTRACKED_ARCHIVE"
 
-        # Create zip preserving relative paths
         cd "$PROJECT_ROOT"
 
-        # Convert newline-separated list to array
-        local files_array=()
-        while IFS= read -r f; do
-            [[ -n "$f" ]] && files_array+=("$f")
-        done <<< "$UNTRACKED_FILES"
-
-        if [[ ${#files_array[@]} -eq 0 ]]; then
-            log "No untracked files to backup"
-        # -y: store symlinks as symlinks, -r: recursive
-        elif printf '%s\n' "${files_array[@]}" | zip -ry -@ "$UNTRACKED_ZIP" > /dev/null; then
-            log "Backed up ${#files_array[@]} untracked items"
+        # Use tar (available in Git Bash) - preserves symlinks with -h
+        if echo "$UNTRACKED_FILES" | tar -czhf "$UNTRACKED_ARCHIVE" -T - 2>/dev/null; then
+            log "Backed up $(echo "$UNTRACKED_FILES" | wc -l | xargs) untracked items"
 
             # Remove untracked files/dirs/symlinks
-            for f in "${files_array[@]}"; do
+            while IFS= read -r f; do
+                [[ -z "$f" ]] && continue
                 local full_path="$PROJECT_ROOT/$f"
                 if [[ -L "$full_path" ]]; then
-                    # Symlink/junction - unlink
-                    rm -f "$full_path" 2>/dev/null || unlink "$full_path" 2>/dev/null || true
+                    rm -f "$full_path" 2>/dev/null || true
                 elif [[ -d "$full_path" ]]; then
-                    # Directory - remove recursively
                     rm -rf "$full_path"
                 else
-                    # Regular file
                     rm -f "$full_path"
                 fi
-            done
+            done <<< "$UNTRACKED_FILES"
         else
             error "Failed to backup untracked files"
             exit 1
@@ -159,14 +113,14 @@ post_run() {
 
     cd "$PROJECT_ROOT"
 
-    # Restore untracked files from zip
-    if [[ -f "$PROJECT_ROOT/$UNTRACKED_ZIP" ]]; then
-        log "Restoring untracked files from $UNTRACKED_ZIP..."
-        if unzip -o "$PROJECT_ROOT/$UNTRACKED_ZIP" -d "$PROJECT_ROOT" > /dev/null; then
-            rm -f "$PROJECT_ROOT/$UNTRACKED_ZIP"
+    # Restore untracked files from archive
+    if [[ -f "$PROJECT_ROOT/$UNTRACKED_ARCHIVE" ]]; then
+        log "Restoring untracked files from $UNTRACKED_ARCHIVE..."
+        if tar -xzf "$PROJECT_ROOT/$UNTRACKED_ARCHIVE" -C "$PROJECT_ROOT"; then
+            rm -f "$PROJECT_ROOT/$UNTRACKED_ARCHIVE"
             log "Untracked files restored"
         else
-            error "Failed to restore untracked files - zip kept at $PROJECT_ROOT/$UNTRACKED_ZIP"
+            error "Failed to restore untracked files - archive kept at $PROJECT_ROOT/$UNTRACKED_ARCHIVE"
         fi
     else
         log "No untracked files backup to restore"
@@ -187,9 +141,6 @@ trap post_run EXIT
 # ==========================================
 # MAIN
 # ==========================================
-
-# Ensure zip is available
-ensure_zip
 
 # Run pre-stage
 pre_run
