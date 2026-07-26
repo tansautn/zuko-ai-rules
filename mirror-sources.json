@@ -1,0 +1,23 @@
+{
+  "$schema": "./scripts/mirror-sources.schema.json",
+  "sources": [
+    {
+      "id": "a7f3c9",
+      "name": "ADHD Rule: 'No preamble' improvement",
+      "description": "Bổ trợ hoàn thiện tối đa cho 'Trả lời trực tiếp, không giới thiệu thừa hoặc kết luận trừ khi được yêu cầu'",
+      "repo": "https://github.com/ayghri/i-have-adhd",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/i-have-adhd/SKILL.md",
+          "dest": "rules/003-i-have-adhd.md"
+        },
+        {
+          "source": "skills/i-have-adhd/SKILL.md",
+          "dest": "skills/i-have-adhd/SKILL.md"
+        }
+      ],
+      "excludes": []
+    }
+  ]
+}
