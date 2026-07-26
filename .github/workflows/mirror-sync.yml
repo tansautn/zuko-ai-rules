@@ -1,0 +1,74 @@
+name: Mirror Sync
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      source_id:
+        description: 'Specific source ID to sync (leave empty for all)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run mode'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup jq
+        # jq is pre-installed on ubuntu-latest, but we ensure it's available
+        run: |
+          if ! command -v jq &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y jq
+          fi
+          jq --version
+
+      - name: Run mirror sync
+        run: |
+          chmod +x ./scripts/mirror-sync.sh
+
+          ARGS=""
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          if [[ -n "${{ inputs.source_id }}" ]]; then
+            ARGS="$ARGS --source-id ${{ inputs.source_id }}"
+          fi
+
+          ./scripts/mirror-sync.sh $ARGS
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.has_changes == 'true' && inputs.dry_run != 'true'
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+
+          git add -A
+          git commit -m "chore: sync mirror sources [skip ci]
+
+          Automated sync from upstream repositories.
+          Run: ${{ github.run_id }}"
+
+          git push

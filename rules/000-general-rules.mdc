@@ -62,3 +62,6 @@ trigger: always
 #### Git
 * Git: Project always have untracked files, and i want it remain untracked. Only `git add` what you created or changed.
   Nothing else. `git add .` is fobidden.
+* Workflow automation (CI-CD): Khi viết workflow config. 
+  Matching rules luôn luôn phải bỏ qua commit/release/pull (đại loại subject type) có chứa "skip ci", "skip-ci", "skip_ci". 
+  Không phân biệt hoa/thường
