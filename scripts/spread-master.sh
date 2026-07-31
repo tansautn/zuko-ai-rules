@@ -112,7 +112,12 @@ post_run() {
     log "=== POST-RUN STAGE ==="
 
     cd "$PROJECT_ROOT"
-
+    # Return to original branch if different
+#    if [[ -n "$ORIGINAL_BRANCH" && "$ORIGINAL_BRANCH" != "$MASTER_BRANCH" ]]; then
+    if [[ -n "$ORIGINAL_BRANCH" ]]; then
+        log "Returning to original branch: $ORIGINAL_BRANCH"
+        git checkout "$ORIGINAL_BRANCH"
+    fi
     # Restore untracked files from archive
     if [[ -f "$PROJECT_ROOT/$UNTRACKED_ARCHIVE" ]]; then
         log "Restoring untracked files from $UNTRACKED_ARCHIVE..."
@@ -124,12 +129,6 @@ post_run() {
         fi
     else
         log "No untracked files backup to restore"
-    fi
-
-    # Return to original branch if different
-    if [[ -n "$ORIGINAL_BRANCH" && "$ORIGINAL_BRANCH" != "$MASTER_BRANCH" ]]; then
-        log "Returning to original branch: $ORIGINAL_BRANCH"
-        git checkout "$ORIGINAL_BRANCH"
     fi
 
     log "=== POST-RUN COMPLETE ==="
