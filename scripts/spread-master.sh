@@ -113,7 +113,8 @@ post_run() {
 
     cd "$PROJECT_ROOT"
     # Return to original branch if different
-    if [[ -n "$ORIGINAL_BRANCH" && "$ORIGINAL_BRANCH" != "$MASTER_BRANCH" ]]; then
+#    if [[ -n "$ORIGINAL_BRANCH" && "$ORIGINAL_BRANCH" != "$MASTER_BRANCH" ]]; then
+    if [[ -n "$ORIGINAL_BRANCH" ]]; then
         log "Returning to original branch: $ORIGINAL_BRANCH"
         git checkout "$ORIGINAL_BRANCH"
     fi
