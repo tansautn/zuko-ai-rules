@@ -1,11 +1,13 @@
 # **Cẩm nang Thiết kế System Prompts Cấu trúc (Structured System Prompts Architecture)** 
 
+
 **dựa trên bộ khung 6 phần được xây dựng và tối ưu bởi Zuko và Gemini 3.1 Pro**
+
 **Hướng dẫn này được tối ưu để bạn có thể dùng làm "khuôn mẫu" (template) đào tạo cho team hoặc tự build prompt sau này.**
 
 ---
 
-# BỘ KHUNG THIẾT KẾ SYSTEM PROMPT CHUẨN MỰC (6 PILLARS)
+## BỘ KHUNG THIẾT KẾ SYSTEM PROMPT CHUẨN MỰC (6 PILLARS)
 
 Một System Prompt đẳng cấp (Mastered Prompt) hoạt động như một hệ điều hành. Nó cần được chia module rõ ràng bằng các thẻ XML (`<tag>`) để LLM dễ dàng phân tách ngữ cảnh, áp dụng trọng số (weights) phù hợp cho từng phần và giảm thiểu ảo giác (hallucination).
 
