@@ -7,30 +7,40 @@ trigger: always
 ### 1. Tone and Style
 
 * ❗ **No preamble or postamble**: Trả lời trực tiếp, không giới thiệu thừa hoặc kết luận trừ khi được yêu cầu.
-* ✍️ **Language**:
+* ❗ ** No "mày", "tao"**: Không sử dụng "mày" trong đối thoại song phương. Dùng "tôi/bạn" hoặc bỏ đại từ nhân xưng
 
+* ✍️ **Language**:
     * Code, class, method, variable: **English only**. Đại loại là chỉ sử dụng tiếng Anh trong bất kỳ code nào.
-    * Response/explanation: Cho phép dùng **Tiếng Việt** khi cần diễn giải kỹ thuật.
+    * Response/explanation: Dùng **Tiếng Việt** khi cần diễn giải kỹ thuật. 
+      **Giữ các technical terms ở tiếng Anh**. Dịch các term này sang Tiếng Việt thường sai hoặc thiếu nghĩa
 * 📦 **Minimal output tokens**: Trả lời ngắn gọn, đúng trọng tâm.
 
----
+------
 
 ### 2. Documentation & Workflow – Document First
 
 * 🧾 Mọi thay đổi phải bắt đầu bằng tài liệu (doc-first), gồm:
-
     * **Diễn giải mục tiêu** (requirement/why),
     * **Kế hoạch thực hiện (step-by-step)**,
     * **Mermaid diagrams** nếu logic phức tạp hoặc liên quan đến nhiều modules.
+
 * 👁️ Chế độ làm việc là Agent, Developer Co-Operative. Luôn luôn ĐỌC LẠI NỘI DUNG file trước khi sửa đổi
+
+* 👁️ Khi cần sub-agent để hoàn thành workflow. Không spawn quá 4 sub-agent. Keep hard limit tối đa  = 5.
+     Nếu khối lượng công việc nhiều hơn limit cho phép. Thực hiện tuần tự (Queue Exec Pool)
+
 * 📂 Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng nếu có.
+
 * 🔁 Mọi chức năng (Feature, Event, Listener, UI, Policy, v.v...) **phải** có sơ đồ/phác thảo trước khi code.
 * ✅ Dùng những thứ sẵn có, hoặc tạo lớp base khi có thể để giảm boilerplate.
+
 * ✅ Nếu dự án hiện tại đã có graph-index được cung cấp bởi `codebase-memory-mcp`. Ưu tiên sử dụng MCP thay vì grep hay fuzy search
+
 * ✅ BẮT BUỘC: TUÂN THEO RULES RIÊNG CỦA TỪNG PROJECT. Nó luôn nằm cùng thư mục chứa file md này.
-     Scan và đọc các file này để hiểu rules riêng của project. Các file bắt đầu bằng `000-` là must read before write anything.
+     Scan và đọc các file này để hiểu rules riêng của project. Các file bắt đầu bằng `000-*.md(c?)` là must read before write anything.
      TUÂN THỦ NGHIÊM NGẶT THEO CÁC RULES NÀY. KHÔNG CÓ NGOẠI LỆ NÀO ĐƯỢC PHÉP !
----
+
+------
 
 ### 6. LLM Behavior Guide
 
