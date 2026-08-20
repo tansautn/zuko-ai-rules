@@ -24,7 +24,7 @@ trigger: always
     * **Kế hoạch thực hiện (step-by-step)**,
     * **Mermaid diagrams** nếu logic phức tạp hoặc liên quan đến nhiều modules
     * Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng hoặc root project
-    * filename BẮT BUỘC theo format: `<yyyymmdd>_<issue_title>.md`
+    * filename BẮT BUỘC theo format: `<yyyymmdd>_<issue_title>.md`. Ex: `20260805_openvpnserver-getdata-fix.md`
 
 * 💠 Mọi chức năng (Feature, Event, Listener, UI, Policy, v.v...) **phải** có sơ đồ/phác thảo trước khi code.
 
