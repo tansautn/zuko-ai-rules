@@ -19,6 +19,10 @@ trigger: always_on
     + Nếu cần đối chiếu dữ liệu thực tế: 
       SCHEMA: xem Model ứng với table cần tra cứu
       DATA: yêu cầu người dùng cung cấp
+* Đối với testing:
+    + Kiểm tra project hiện tại sử dụng RMDB-system nào. Và pick `lite` version tương ứng:
+      `MySQL`, `MariaDB`: dùng `SQLite`
+      `Postgres`: `pglite` từ `electricsql` (môi trường hiện tại không có: curl download binary từ github release về)
 ---
 
 ### 3. Implement Guide.
@@ -37,10 +41,10 @@ trigger: always_on
 
 * 🧪 **Testing-first** nếu logic >= 3 bước xử lý
 * 🛠️ Tuân theo PSR:
-
-  * PSR-4: autoloading
-  * PSR-12: code style
+    * PSR-4: autoloading
+    * PSR-12: code style
 * 🧠 Mỗi method không vượt quá **40 dòng**
+    * Không áp dụng đối với UI, Template (Filament relates cũng tính là UI luôn)
 * 🔍 Sử dụng **type hint**, **dependency injection**, không viết code hard-coupled
 * 🚫 Không log thông tin nhạy cảm. Không commit credentials.
 * Nếu project có linter, fixer riêng đi kèm. Sử dụng chúng mỗi khi thay đổi nội trên 1 file (run only files which changed)
@@ -50,6 +54,17 @@ trigger: always_on
 
 ### 5. Filament Admin Rules
 
-* Tạo Resource thông qua command hoặc `miguilim/filament-auto-panel`
+* Tạo Resource thông qua command nếu có thể để scaffold đúng và tiết kiệm token hơn
+* Nếu dự án hiện tại có LaraZeus Chaos thì sử dụng base từ Chaos
 * Field validation, authorization policy tách riêng – không nhét trong Resource class
-* Không override default view trừ khi thực sự cần thiết
+* Nghiêm cấm đặt Business Logic trong Table/Form/Resource.
+    Cách tốt nhất là đặt trong Service của DomainLogic đó. Filament truy cập qua Action.
+    Arch: Table/Form/Resource > Action > ServiceClass
+* Nghiêm cấm query trực tiếp bằng Eloquent trong Filament. Dùng Repository tương ứng với Model. 
+    Ex: `PostRepository::make()->getIsolatedQuery()`
+    Method trên trả về `Illuminate\Database\Eloquent\Builder` của model `Post`
+* Không override default view (blade) trừ khi thực sự cần thiết
+* Filament routing: **Xác định phiên bản** hiện tại của filament. Sau đó đọc rule tương ứng với phiên bản:
+    * `v3.x`: 
+    * `v4.x`: [002-filament-v4-rules.md](mdc:./002-filament-v4-rules.md)
+    * `v5.x`: Load skill filament-pro, làm việc theo chỉ dẫn từ skill này
