@@ -7,52 +7,35 @@ globs: .agents/rules/*.mdc
 
   ```markdown
   ---
-  description: Clear, one-line description of what the rule enforces
+  description: 1-line enforcement description
   globs: path/to/files/*.ext, other/path/**/*
   alwaysApply: boolean
   ---
 
+  # [Title Rule] - [Mục tiêu cốt lõi của rule]
+
+  - **Mô tả (Core Objectives):**
+    - **Cần triệt tiêu:** [Điều/Pattern cần loại bỏ]
+    - **Lý do:** [Tại sao cần loại bỏ/Hậu quả]
+    - **Tools/Scripts:**
+      - `[Tool 1]`: [1 dòng ngắn gọn mô tả cách hoạt động]
+      - `[Tool 2]`: [1 dòng ngắn gọn mô tả cách hoạt động]
+
   - **Main Points in Bold**
     - Sub-points with details
-    - Examples and explanations
   ```
 
-- **File References:**
+- **Formatting & References:**
+  - **File Links:** Use `[filename](mdc:path/to/file)` (e.g., `[schema.prisma](mdc:prisma/schema.prisma)`).
+  - **Code Blocks:** Language-specific. Must include `// ✅ DO:` (good patterns) and `// ❌ DON'T:` (anti-patterns).
+  - **Style:** Bullet points, concise phrasing, consistent formatting.
 
-  - Use `[filename](mdc:path/to/file)` ([filename](mdc:filename)) to reference files
-  - Example: [prisma.mdc](mdc:.cursor/rules/prisma.mdc) for rule references
-  - Example: [schema.prisma](mdc:prisma/schema.prisma) for code references
+- **Content & Best Practices:**
+  - **Actionable:** Focus on specific, implementable requirements.
+  - **Contextual:** Prefer actual codebase examples over theoretical ones.
+  - **DRY:** Cross-reference existing rules to avoid duplication.
 
-- **Code Examples:**
-
-  - Use language-specific code blocks
-
-  ```typescript
-  // ✅ DO: Show good examples
-  const goodExample = true;
-
-  // ❌ DON'T: Show anti-patterns
-  const badExample = false;
-  ```
-
-- **Rule Content Guidelines:**
-
-  - Start with high-level overview
-  - Include specific, actionable requirements
-  - Show examples of correct implementation
-  - Reference existing code when possible
-  - Keep rules DRY by referencing other rules
-
-- **Rule Maintenance:**
-
-  - Update rules when new patterns emerge
-  - Add examples from actual codebase
-  - Remove outdated patterns
-  - Cross-reference related rules
-
-- **Best Practices:**
-  - Use bullet points for clarity
-  - Keep descriptions concise
-  - Include both DO and DON'T examples
-  - Reference actual code over theoretical examples
-  - Use consistent formatting across rules
+- **Maintenance:**
+  - Continually update with new patterns.
+  - Add fresh examples from the live codebase.
+  - Remove outdated anti-patterns.
