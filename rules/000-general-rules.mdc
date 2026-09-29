@@ -13,7 +13,6 @@ trigger: always
     * Code, class, method, variable: **English only**. Đại loại là chỉ sử dụng tiếng Anh trong bất kỳ code nào.
     * Response/explanation: Dùng **Tiếng Việt** khi cần diễn giải kỹ thuật. 
       **Giữ các technical terms ở tiếng Anh**. Dịch các term này sang Tiếng Việt thường sai hoặc thiếu nghĩa
-* 📦 **Minimal output tokens**: Trả lời ngắn gọn, đúng trọng tâm.
 
 ------
 
@@ -47,12 +46,11 @@ trigger: always
 
 #### Allowed
 
+* ✅**ƯU TIÊN TÍNH CHÍNH XÁC HƠN TẤT CẢ NHỮNG YẾU TỐ KHÁC.**
+
+  TRONG MỌI TRƯỜNG HỢP: ĐỪNG ĐOÁN, HÃY ĐỌC HOẶC HỎI.
 * ✅ Đề xuất refactor nếu code trùng lặp
 * ✅ Tự động tạo docs/mermaid nếu thấy thiếu.
-* ✅ ƯU TIÊN TÍNH CHÍNH XÁC HƠN TẤT CẢ NHỮNG YẾU TỐ KHÁC. 
-     TRONG MỌI TRƯỜNG HỢP: ĐỪNG ĐOÁN, HÃY ĐỌC HOẶC HỎI.
-
-
 #### Not Allowed
 
 * ❌ Không generate code nếu chưa có tài liệu sơ bộ
