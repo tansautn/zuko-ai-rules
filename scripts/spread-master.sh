@@ -121,7 +121,7 @@ for branch in $BRANCHES; do
                     echo "Resolve in: $WORKTREE_DIR"
                     echo "  cd $WORKTREE_DIR"
                     echo "  git add <resolved-files>"
-                    echo "  git commit"
+                    echo "  # (script will auto-commit once all conflicts staged)"
                     echo "Waiting... (checking every ${CONFLICT_CHECK_INTERVAL}s)"
                     echo "=========================================="
                     echo ""
@@ -132,6 +132,12 @@ for branch in $BRANCHES; do
                     done
 
                     log "  Conflicts resolved! Continuing..."
+
+                    # Auto-commit if user staged resolutions but didn't commit yet
+                    if [[ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ]]; then
+                        log "  Committing resolved merge..."
+                        git commit --no-edit
+                    fi
 
                     if [[ $(git rev-list "origin/$branch..$branch" --count) -gt 0 ]]; then
                         log "  Pushing changes to origin/$branch..."
