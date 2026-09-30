@@ -37,6 +37,8 @@ jobs:
           jq --version
 
       - name: Run mirror sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x ./scripts/mirror-sync.sh
 

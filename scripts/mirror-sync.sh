@@ -23,7 +23,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-CONFIG_FILE="$SCRIPT_DIR/mirror-sources.json"
+
+# sources.json lookup order: $CWD then $SCRIPT_DIR
+if [[ -f "$PWD/mirror-sources.json" ]]; then
+    CONFIG_FILE="$PWD/mirror-sources.json"
+else
+    CONFIG_FILE="$SCRIPT_DIR/mirror-sources.json"
+fi
+
 REPO_CONFIG="$REPO_ROOT/config.json"
 DRY_RUN=false
 SOURCE_FILTER=""
