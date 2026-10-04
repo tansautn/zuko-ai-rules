@@ -35,7 +35,10 @@ REPO_CONFIG="$REPO_ROOT/config.json"
 DRY_RUN=false
 SOURCE_FILTER=""
 RESOLVED_VERSION=""  # Set by sync functions; read by dispatcher to update config.json
-
+CURL_AUTH=()
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    CURL_AUTH=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+fi
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -218,14 +221,6 @@ parse_args() {
 }
 
 # ─── GitHub API helpers ───────────────────────────────────────────────────────
-
-# Build curl auth header args based on GITHUB_TOKEN env var
-github_auth_args() {
-    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-        echo "-H" "Authorization: Bearer ${GITHUB_TOKEN}"
-    fi
-}
-
 # Extract "owner/repo" from a GitHub URL
 # e.g. https://github.com/foo/bar -> foo/bar
 repo_slug_from_url() {
@@ -251,8 +246,7 @@ resolve_release_tag() {
     log_step "Resolving latest release tag for ${slug}..."
 
     local response
-    # shellcheck disable=SC2046
-    response=$(curl -sf $(github_auth_args) \
+    response=$(curl -sf ${CURL_AUTH[@]+"${CURL_AUTH[@]}"} \
         -H "Accept: application/vnd.github+json" \
         "$api_url" 2>/dev/null) || {
         log_error "Failed to fetch release info from $api_url"
@@ -287,8 +281,7 @@ get_release_json() {
         api_url="https://api.github.com/repos/${slug}/releases/tags/${tag}"
     fi
 
-    # shellcheck disable=SC2046
-    curl -sf $(github_auth_args) \
+    curl -sf ${CURL_AUTH[@]+"${CURL_AUTH[@]}"} \
         -H "Accept: application/vnd.github+json" \
         "$api_url" 2>/dev/null || {
         log_error "Failed to fetch release JSON from $api_url"
@@ -369,11 +362,9 @@ download_file() {
     mkdir -p "$dest_dir"
 
     local http_code
-    # shellcheck disable=SC2046
-    http_code=$(curl -sL $(github_auth_args) -w "%{http_code}" -o "$dest_file" "$url")
-
+    http_code=$(curl -sSL ${CURL_AUTH[@]+"${CURL_AUTH[@]}"} -w "%{http_code}" -o "$dest_file" "$url")
     if [[ "$http_code" != "200" ]]; then
-        log_error "Failed to download $url (HTTP $http_code)"
+        log_error "Failed to download $url (HTTP ${http_code:0:3})"
         rm -f "$dest_file"
         return 1
     fi
