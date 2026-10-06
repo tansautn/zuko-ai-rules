@@ -35,7 +35,7 @@ Script thêm pattern sau vào `.claude/settings.local.json` của parent project
 ```json
 {
   "claudeMdExcludes": [
-    "**/.agents/zuko-ai-rules/CLAUDE.md"
+    "**/.agents/CLAUDE.md"
   ]
 }
 ```
@@ -48,7 +48,7 @@ Script thêm pattern sau vào `.claude/settings.local.json` của parent project
 
 ```bash
 # Chạy từ ROOT của parent project (không phải trong submodule)
-.agents/zuko-ai-rules/scripts/install-excludes.sh [OPTIONS]
+.agents/scripts/install-excludes.sh [OPTIONS]
 ```
 
 | Option | Mô tả |
@@ -65,20 +65,20 @@ Script thêm pattern sau vào `.claude/settings.local.json` của parent project
 ### Bước 1: Add submodule
 
 ```bash
-git submodule add -b master https://github.com/user/zuko-ai-rules.git .agents/zuko-ai-rules
+git submodule add -b master https://github.com/user/zuko-ai-rules.git .agents
 ```
 
 ### Bước 2: Install excludes
 
 ```bash
-.agents/zuko-ai-rules/scripts/install-excludes.sh
+.agents/scripts/install-excludes.sh
 ```
 
 Output:
 ```
-Auto-detected submodule path: .agents/zuko-ai-rules
+Auto-detected submodule path: .agents
 Added to .claude/settings.local.json:
-  claudeMdExcludes += ["**/.agents/zuko-ai-rules/CLAUDE.md"]
+  claudeMdExcludes += ["**/.agents/CLAUDE.md"]
 ```
 
 ### Bước 3: Verify
@@ -90,7 +90,7 @@ cat .claude/settings.local.json
 ```json
 {
   "claudeMdExcludes": [
-    "**/.agents/zuko-ai-rules/CLAUDE.md"
+    "**/.agents/CLAUDE.md"
   ]
 }
 ```
