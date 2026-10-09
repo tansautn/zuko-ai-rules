@@ -1,0 +1,1 @@
+../skills/write-technical-docs/references/mermaid-styling.md
