@@ -148,6 +148,19 @@
           "dest": "skills/m_diagnosing-bugs/SKILL.md"
         }
       ]
+    },
+    {
+      "id": "f7dd49",
+      "type": "git",
+      "name": "mattpocock:grilling",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/productivity/grilling/SKILL.md",
+          "dest": "skills/m_grilling/SKILL.md"
+        }
+      ]
     }
   ]
 }
