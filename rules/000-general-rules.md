@@ -25,6 +25,11 @@ trigger: always
     * Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng hoặc root project
     * filename BẮT BUỘC theo format: `<yyyymmdd>_<issue_title>.md`. Ex: `20260805_openvpnserver-getdata-fix.md`
 
+* 🧾 **Single plan file per session**: Trong cùng 1 session, KHÔNG tạo nhiều hơn 1 file trong `docs/agent-plans/`.
+    * Nếu vấn đề phát sinh không cùng topic → mở rộng title để bao gồm tất cả
+    * Trong mọi trường hợp, nhét tất cả vào file đầu tiên đã tạo khi session bắt đầu
+    * Nếu chưa có file nào → tạo 1 file mới theo format `<yyyymmdd>_<issue_title>.md`
+
 * 💠 Mọi chức năng (Feature, Event, Listener, UI, Policy, v.v...) **phải** có sơ đồ/phác thảo trước khi code.
 
 * 💠 Dùng những thứ sẵn có, hoặc tạo lớp base khi có thể để giảm boilerplate.
@@ -60,6 +65,11 @@ trigger: always
 ---
 
 ### 7. Agent Tool Usage
+
+#### Search / Grep
+* **BẮT BUỘC dùng `rg` (ripgrep) thay cho `grep`** cho mọi text/content search. Xem chi tiết tại `rules/003-ripgrep-tool-usage.md`
+* Agent có Grep tool riêng (ripgrep-backed) → ưu tiên tool đó. Chỉ fallback Bash + `rg` khi cần pipe/transform
+* Nếu `rg` chưa cài → cài trước khi dùng (guide trong rule 003)
 
 #### Ask User toolcall policy
 * Runtime tool `ask_user` hay đại loại tool có mục tiêu prompt user thường có timeout nhất định.
