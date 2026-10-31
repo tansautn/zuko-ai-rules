@@ -18,6 +18,136 @@
         }
       ],
       "excludes": []
+    },
+    {
+      "id": "mp01a1",
+      "name": "mattpocock: grill-with-docs",
+      "description": "Interview session → domain model, GLOSSARY.md, ADRs",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/grill-with-docs/SKILL.md",
+          "dest": "skills/m_grill-with-docs/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp02b2",
+      "name": "mattpocock: domain-modeling",
+      "description": "Build/sharpen domain model, update GLOSSARY.md",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/domain-modeling/SKILL.md",
+          "dest": "skills/m_domain-modeling/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp03c3",
+      "name": "mattpocock: tdd",
+      "description": "Test-driven development loop",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/tdd/SKILL.md",
+          "dest": "skills/m_tdd/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp04d4",
+      "name": "mattpocock: implement",
+      "description": "Build spec/tickets with TDD at seams",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/implement/SKILL.md",
+          "dest": "skills/m_implement/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp05e5",
+      "name": "mattpocock: to-spec",
+      "description": "Synthesize conversation into spec",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/to-spec/SKILL.md",
+          "dest": "skills/m_to-spec/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp06f6",
+      "name": "mattpocock: to-tickets",
+      "description": "Break plans into tracer-bullet tickets",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/to-tickets/SKILL.md",
+          "dest": "skills/m_to-tickets/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp07a7",
+      "name": "mattpocock: handoff",
+      "description": "Compact conversation for handoff between sessions",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/productivity/handoff/SKILL.md",
+          "dest": "skills/m_handoff/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp08b8",
+      "name": "mattpocock: research",
+      "description": "Investigate questions with cited Markdown output",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/research/SKILL.md",
+          "dest": "skills/m_research/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp09c9",
+      "name": "mattpocock: wayfinder",
+      "description": "Plan massive work as decision tickets",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/wayfinder/SKILL.md",
+          "dest": "skills/m_wayfinder/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "mp10d0",
+      "name": "mattpocock: diagnosing-bugs",
+      "description": "Red-green-refactor for hard bugs",
+      "repo": "https://github.com/mattpocock/skills",
+      "branch": "main",
+      "mappings": [
+        {
+          "source": "skills/engineering/diagnosing-bugs/SKILL.md",
+          "dest": "skills/m_diagnosing-bugs/SKILL.md"
+        }
+      ]
     }
   ]
 }

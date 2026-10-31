@@ -24,19 +24,51 @@ can't type into them. A shared tmux session solves this:
 - **Crucially**: when a command restarts `sshd` (e.g. during an upgrade), your SSH drops
   but the work keeps running inside tmux, unaffected by the connection's SIGHUP.
 
+## Session workspace
+
+**ALL files** this skill creates or uses (keys, scripts, logs, investigation output) go
+under **one root directory** — never scatter to `$HOME` or random temp paths.
+
+The setup script creates this structure automatically:
+```
+~/tmux-sessions/<host>_<timestamp>/
+├── keys/       — SSH keys generated for this session
+├── scripts/    — Step scripts to ship to remote
+└── logs/       — Command logs, pane captures, investigation output
+```
+
+When writing any file during the session (a script to scp, a captured log, a backup):
+- **Local files** → `$WORKSPACE/scripts/` or `$WORKSPACE/logs/`
+- **Remote files** → `/root/tmux-workspace/` (or equivalent home-relative path on remote)
+
 ## Setup sequence
 
-### 1. Load the SSH key into ssh-agent (once)
-One-shot SSH has no TTY, so a passphrase prompt fails. Load the key into the agent instead
-of generating a weak nopassphrase key. On Windows:
-```powershell
-Get-Service ssh-agent | Set-Service -StartupType Automatic
-Start-Service ssh-agent
-ssh-add $env:USERPROFILE\.ssh\id_ed25519   # passphrase entered once
-ssh-add -l                                  # verify loaded
+### 1. Run the SSH setup script
+
+**Do NOT manually search for SSH keys or fumble with ssh-agent.** Run the setup script:
+
+```bash
+bash scripts/ssh-tmux-setup.sh --host <hostname>
 ```
-Revoke when done: `ssh-add -d` / `Stop-Service ssh-agent`. Windows OpenSSH has no
-`ControlMaster`, so each command is a fresh TCP handshake — slower, harmless.
+
+The script:
+1. Generates a new `ed25519` key (no passphrase, named `id_tmux_skill_<timestamp>`)
+2. Detects the correct SSH binary (Windows OpenSSH preferred over Git SSH)
+3. Starts ssh-agent if needed and loads the key
+4. Outputs structured blocks you parse for `SSH_BINARY`, `SCP_BINARY`, `PUBKEY`, `KEY_PATH`, `WORKSPACE`
+
+Parse the output blocks:
+```
+==== BEGIN SSH_BINARY ====
+/c/Windows/System32/OpenSSH/ssh.exe
+==== END SSH_BINARY ====
+```
+
+Then **show the public key to the user** and ask them to authorize it on the remote host
+(`~/.ssh/authorized_keys`). Wait for confirmation before proceeding.
+
+Store the parsed values — use `$SSH_BIN`, `$SCP_BIN`, `$KEY_PATH`, `$WORKSPACE` throughout
+the session. **Never hardcode paths.**
 
 ### 2. Verify connectivity and snapshot who/where you are
 ```bash
@@ -67,12 +99,21 @@ ssh ... root@<host> "tmux capture-pane -p -t <session> -S -200"
 
 ## Running a script step (the stable pattern)
 
-Inline commands are fragile. For anything non-trivial: write a script, ship it, run it in
-tmux, poll for completion.
+Inline commands are fragile. For anything non-trivial: write a script in `$WORKSPACE/scripts/`,
+ship it, run it in tmux, poll for completion.
 ```bash
-scp -P <port> -i <key> step.sh root@<host>:/root/step.sh
-ssh ... root@<host> "sed -i 's/\r$//' /root/step.sh; chmod +x /root/step.sh; \
-  tmux send-keys -t <session> 'clear; bash /root/step.sh 2>&1 | tee /root/step.log' Enter"
+# Write script locally under workspace
+cat > "$WORKSPACE/scripts/step-01.sh" << 'SCRIPT'
+#!/bin/bash
+set -euo pipefail
+# ... step logic ...
+SCRIPT
+
+# Ship to remote workspace
+$SSH_BIN ... root@<host> "mkdir -p /root/tmux-workspace"
+$SCP_BIN -P <port> -i $KEY_PATH "$WORKSPACE/scripts/step-01.sh" root@<host>:/root/tmux-workspace/step-01.sh
+$SSH_BIN ... root@<host> "sed -i 's/\r$//' /root/tmux-workspace/step-01.sh; chmod +x /root/tmux-workspace/step-01.sh; \
+  tmux send-keys -t <session> 'clear; bash /root/tmux-workspace/step-01.sh 2>&1 | tee /root/tmux-workspace/step-01.log' Enter"
 ```
 `sed -i 's/\r$//'` strips CRLF — scripts authored on Windows carry `\r` that breaks bash.
 
@@ -112,3 +153,31 @@ box answers, recreate the session, and tell the user to `tmux attach -t <session
 
 Report: host, OS/kernel, tmux session name + attach state, disk/RAM headroom. Then **stop
 and wait for the user's instruction** on what to do next.
+
+## End session protocol
+
+When the objective is achieved or the user asks to end the session:
+
+1. **Remote cleanup report** — list all files/dirs created on the remote:
+   ```
+   Remote files created during this session:
+     /root/tmux-workspace/step-01-backup.sh
+     /root/tmux-workspace/step-01-backup.log
+     /root/step.sh  (if any leaked outside workspace — flag it)
+   ```
+
+2. **Local workspace report**:
+   ```
+   Local session workspace: ~/tmux-sessions/myhost_20261031_143000/
+     keys/id_tmux_skill_20261031_143000      — private key (revoke from agent)
+     keys/id_tmux_skill_20261031_143000.pub  — public key (remove from remote authorized_keys)
+     scripts/step-01-backup.sh               — shipped to remote
+     logs/baseline-snapshot.txt              — pre-work baseline
+     logs/pane-capture-final.txt             — last pane state
+   ```
+
+3. **Key revocation reminder**: tell user to remove the pubkey from remote `authorized_keys`
+   and optionally `ssh-add -d <key_path>` locally.
+
+4. **Do NOT delete** the workspace — the user may need logs/scripts later. Just report the
+   path and let them decide.
