@@ -20,6 +20,16 @@ already up. Establish it first with the `remote-tmux-ssh-link` skill (ssh-agent 
 tmux session, script-ship pattern, the PowerShell `$` trap, monitoring, secrets hygiene).
 Everything below is *what* to do over that channel.
 
+### Workspace discipline
+
+All session artifacts live under the workspace created by `ssh-tmux-setup.sh`:
+- **Local**: `$WORKSPACE/scripts/`, `$WORKSPACE/logs/` — step scripts, captured output, baselines
+- **Remote**: `/root/tmux-workspace/` — shipped scripts, step logs, backups
+
+Never write files outside these directories. If a command produces output you need to keep,
+pipe it to `$WORKSPACE/logs/<descriptive-name>.txt` (local) or
+`/root/tmux-workspace/<name>.log` (remote).
+
 ---
 
 ## 1. Non-negotiable safety architecture
@@ -185,3 +195,42 @@ got removed out from under a running tunnel.
   disk + RAM headroom) rather than narrating every command.
 - RAM is often the real constraint on small VPSs, not disk — stop heavy services (tor/danted
   swarms, redis after BGSAVE) before a full-upgrade to free headroom.
+
+---
+
+## 5. End session — reporting and cleanup
+
+When the objective is complete or the user ends the session:
+
+### Report to user
+
+Produce a structured summary:
+
+```
+═══ SESSION COMPLETE ═══
+
+Objective: <what was done>
+Result: <success/partial/failed>
+
+Remote files (on <host>):
+  /root/tmux-workspace/step-01-backup.sh
+  /root/tmux-workspace/step-01-backup.log
+  /root/tmux-workspace/baseline.txt
+  /root/mysql-backup-20261031.sql.gz       ← backup outside workspace (flagged)
+
+Local workspace: ~/tmux-sessions/<host>_<timestamp>/
+  keys/       — SSH key pair (revoke pubkey from remote)
+  scripts/    — Step scripts shipped to remote
+  logs/       — Baselines, pane captures, investigation notes
+
+Action needed:
+  • Remove pubkey from remote ~/.ssh/authorized_keys
+  • Optionally: ssh-add -d <key_path>
+  • Review remote /root/tmux-workspace/ — keep or clean up
+```
+
+### Rules
+- **Never auto-delete** remote workspace or backups — user decides
+- **Flag any files** that ended up outside the designated workspace dirs (both local and remote)
+- If backups were created (DB dumps, /etc snapshots), explicitly list their paths and sizes
+- If services were stopped for the operation, confirm they were restarted
