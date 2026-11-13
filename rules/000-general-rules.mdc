@@ -61,6 +61,7 @@ trigger: always
 * ❌ Không generate code nếu chưa có tài liệu sơ bộ
 * ❌ Không merge logic điều phối (controller) với logic service (xử lý/có trách nhiệm riêng)
 * ❌ Không bao giờ tham chiếu, import những file mà user nêu là tham khảo. ĐẶC BIỆT nếu file path chứa `sample`
+     Cho phép copy trực tiếp cả file chứa code vào working project hiện tại
 
 ---
 
