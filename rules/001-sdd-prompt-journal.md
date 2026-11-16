@@ -18,6 +18,7 @@ alwaysApply: true
 
 ## 2) Vị trí & Naming (MUST)
 
+- **Monorepo (umbrella + sub-repos)?** → vị trí tuân theo [001-sdd-monorepo-flow](mdc:./001-sdd-monorepo-flow.md): MỌI journal đặt ở **umbrella**, kể cả khi prompt sinh code cho sub-repo; sub-repo KHÔNG BAO GIỜ chứa `prompts/`. Format/naming/index vẫn là rule này.
 - Feature-scoped commands → `specs/<NNN-slug>/prompts/`, mỗi invocation 1 file.
 - **Project-wide specs** (`constitution`, specs không thuộc feature nào, cross-feature) → gộp vào MỘT file duy nhất: `docs/prompts/spec-project-wide.md`, mỗi invocation là 1 entry APPEND vào cuối (format ở mục 4.1).
 - Filename (feature-scoped): `<command>.<yyyymmdd>_<short_title>.md`
