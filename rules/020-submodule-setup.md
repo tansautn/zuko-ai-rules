@@ -54,9 +54,12 @@ Script thêm pattern sau vào `.claude/settings.local.json` của parent project
 | Option | Mô tả |
 |--------|-------|
 | `--submodule-path <path>` | Chỉ định path submodule (bỏ qua auto-detect) |
+| `--tasks-hooks yes\|no` | Bỏ qua câu hỏi cài tasks-workflow hooks (mặc định: hỏi; `no` khi không có TTY) |
+| `--hooks-scope project\|local\|user` | Nơi ghi hooks: `.claude/settings.json` / `.claude/settings.local.json` / `~/.claude/settings.json` |
+| `--python <bin>` | Interpreter dùng trong hook command (mặc định: python3/python nào chạy được) |
 | `-h, --help` | Hiển thị help |
 
-**Requirement:** `jq`
+**Requirement:** `jq` (+ `python` ≥ 3.10 nếu cài tasks hooks)
 
 ---
 
@@ -80,6 +83,21 @@ Auto-detected submodule path: .agents
 Added to .claude/settings.local.json:
   claudeMdExcludes += ["**/.agents/CLAUDE.md"]
 ```
+
+### Bước 2b: Tasks-workflow hooks (tuỳ chọn)
+
+Sau khi cài excludes, script hỏi:
+
+```
+Install tasks-workflow hooks (sync docs/tasks/ with Claude Code Tasks via scripts/tasks/taskctl.py)? [y/N] y
+Where should the hooks go?
+  1) project  .claude/settings.json        (committed — everyone in this project)
+  2) local    .claude/settings.local.json  (this machine, this project only)
+  3) user     ~/.claude/settings.json      (you, in every project; hook is a no-op where docs/tasks/ is absent)
+Scope [1/2/3] (default 2):
+```
+
+Kết quả: `hooks.PostToolUse` + `hooks.SessionStart` + `env.CLAUDE_CODE_ENABLE_TODO_TOOLS=1` được **append** vào file đã chọn (không đụng key khác, chạy lại không nhân đôi). Chi tiết: [@scripts/tasks/README.md](../scripts/tasks/README.md).
 
 ### Bước 3: Verify
 
