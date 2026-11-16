@@ -19,7 +19,7 @@ trigger: always
 ### 2. Documentation & Workflow – Document First
 
 * 🧾 Mọi thay đổi phải bắt đầu bằng tài liệu (doc-first), gồm:
-    * **Diễn giải mục tiêu** (requirement/why),
+    * **Diễn giải mục tiêu** (requirement/why), Kèm thêm context "User Story" nếu thấy hữu ích trong việc mô tả diễn giải
     * **Kế hoạch thực hiện (step-by-step)**,
     * **Mermaid diagrams** nếu logic phức tạp hoặc liên quan đến nhiều modules
     * Đặt tài liệu tại thư mục `docs/agent-plans/` trong module tương ứng hoặc root project
@@ -36,6 +36,10 @@ trigger: always
 
 * 💠 Chế độ làm việc là Agent, Developer Co-Operative. Luôn luôn ĐỌC LẠI NỘI DUNG file trước khi sửa đổi
 
+* 💠 CoWorker: khi cần sử dụng Computer Use. Và bị báo machine của tôi không on Hypervisor. 
+     Hãy dùng `Windows-MCP` / `DesktopCommander` thay thế. 
+     Tất cả những gì ComputerUse có thể. Tôi và nhiều CoWorker đã từng làm tốt hơn với 2 MCP trên.
+
 * 💠 Khi cần sub-agent để hoàn thành workflow. Không spawn quá 4 sub-agents. Keep hard limit tối đa  = 5.
      Nếu khối lượng công việc nhiều hơn limit cho phép. Thực hiện tuần tự (Queue Exec Pool)
 
@@ -47,7 +51,7 @@ trigger: always
 
 ------
 
-### 6. LLM Behavior Guide
+### 6. LLM, Agent Behaviors Guide
 
 #### Allowed
 
@@ -63,12 +67,8 @@ trigger: always
 * ❌ Không bao giờ tham chiếu, import những file mà user nêu là tham khảo. ĐẶC BIỆT nếu file path chứa `sample`
      Cho phép copy trực tiếp cả file chứa code vào working project hiện tại
 
----
-
-### 7. Agent Tool Usage
-
 #### Search / Grep
-* **BẮT BUỘC dùng `rg` (ripgrep) thay cho `grep`** cho mọi text/content search. Xem chi tiết tại `rules/003-ripgrep-tool-usage.md`
+* **BẮT BUỘC dùng `rg` (ripgrep) thay cho `grep`** cho mọi text/content search. Xem chi tiết tại [`rules/003-ripgrep-tool-usage.md`](./003-ripgrep-tool-usage.md)
 * Agent có Grep tool riêng (ripgrep-backed) → ưu tiên tool đó. Chỉ fallback Bash + `rg` khi cần pipe/transform
 * Nếu `rg` chưa cài → cài trước khi dùng (guide trong rule 003)
 
