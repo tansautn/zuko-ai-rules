@@ -62,6 +62,8 @@ MAP_FILE = ".cc-task-map.json"
 SUBJECT_REF_RE = re.compile(r"^\s*\[T?(?P<ref>\d+(?:-\d+)*)\]")
 CC_ID_IN_TEXT_RE = re.compile(r"Task\s+#(?P<id>\d+)", re.I)
 
+# fix stdout issues Windows
+sys.stdout.reconfigure(encoding="utf-8")
 
 # --------------------------------------------------------------------------- #
 # Helpers
