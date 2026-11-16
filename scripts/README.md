@@ -10,6 +10,7 @@ Automation scripts for the zuko-ai-rules repository.
 | `mirror-sync.sh` | Sync files from external GitHub repositories |
 | `install-excludes.sh` | Configure `claudeMdExcludes` for parent projects using this repo as submodule |
 | `update-changelog.sh` | Generate/update CHANGELOG.md from git history |
+| `tasks/taskctl.py` | File-based tasks (`docs/tasks/`) ⇄ Claude Code Task tools bridge + hooks. See `scripts/tasks/README.md` |
 
 ## spread-master.sh
 
