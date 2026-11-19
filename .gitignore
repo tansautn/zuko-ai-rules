@@ -8,3 +8,4 @@ out
 gen
 untracked_files.*
 .claude
+__pycache__
